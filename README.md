@@ -8,6 +8,9 @@ A Node.js + TypeScript backend server built with Express.js, PostgreSQL, and Pri
 - ✅ Express.js for web framework
 - ✅ PostgreSQL database
 - ✅ Prisma ORM for database management
+- ✅ **JWT-based Authentication** 🔐
+- ✅ **User & Admin Role Management** 👤
+- ✅ **Secure Password Hashing** 🔒
 - ✅ CORS enabled
 - ✅ Helmet for security headers
 - ✅ Environment variables support
@@ -84,24 +87,43 @@ npm start
 
 ## API Endpoints
 
+### Public Endpoints
 - `GET /health` - Health check endpoint
 - `GET /api` - API information endpoint
+- `POST /api/auth/signup` - Register a new user
+- `POST /api/auth/login` - Login and get JWT token
+
+### Protected Endpoints (Requires JWT Token)
+- `GET /api/auth/profile` - Get current user profile
+
+**For detailed authentication documentation, see [AUTHENTICATION.md](./AUTHENTICATION.md)**
 
 ## Project Structure
 
 ```
 continental-backend/
 ├── src/
+│   ├── controllers/
+│   │   └── authController.ts    # Authentication controllers
+│   ├── services/
+│   │   └── authService.ts       # Business logic for auth
+│   ├── routes/
+│   │   └── authRoutes.ts        # Authentication routes
+│   ├── middleware/
+│   │   └── authMiddleware.ts    # JWT verification middleware
+│   ├── types/
+│   │   └── auth.ts              # TypeScript types
 │   ├── lib/
-│   │   └── prisma.ts     # Prisma client configuration
-│   └── index.ts          # Main server file
+│   │   └── prisma.ts            # Prisma client configuration
+│   └── index.ts                  # Main server file
 ├── prisma/
-│   ├── schema.prisma     # Database schema
-│   └── seed.ts           # Database seeding script
-├── dist/                 # Compiled JavaScript (generated)
+│   ├── schema.prisma            # Database schema
+│   └── seed.ts                  # Database seeding script
+├── dist/                         # Compiled JavaScript (generated)
 ├── package.json
 ├── tsconfig.json
-├── .env                  # Environment variables (create this)
+├── .env                          # Environment variables (create this)
+├── AUTHENTICATION.md             # Authentication documentation
 └── README.md
 ```
 
@@ -112,6 +134,8 @@ continental-backend/
 - **Express.js** - Web framework
 - **PostgreSQL** - Database
 - **Prisma** - Database ORM
+- **JWT** - JSON Web Tokens for authentication
+- **bcrypt** - Password hashing
 - **CORS** - Cross-origin resource sharing
 - **Helmet** - Security middleware
 - **dotenv** - Environment variables

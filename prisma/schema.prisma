@@ -10,28 +10,48 @@ datasource db {
     url      = env("DATABASE_URL")
 }
 
-// Example User model
+// User model with authentication
 model User {
     id        Int      @id @default(autoincrement())
     email     String   @unique
     name      String?
+    password  String
+    role      Role     @default(USER)
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
-    Post      Post[]
 
     @@map("users")
 }
 
-// Example Post model
-model Post {
-    id        Int      @id @default(autoincrement())
-    title     String
-    content   String?
-    published Boolean  @default(false)
-    authorId  Int
-    author    User     @relation(fields: [authorId], references: [id])
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
+// Role enum
+enum Role {
+    USER
+    ADMIN
+}
 
-    @@map("posts")
+// Lead Status enum
+enum LeadStatus {
+    ACTIVE
+    LOST
+    DUE
+}
+
+// Lead model for contact form submissions
+model Lead {
+    id            Int        @id @default(autoincrement())
+    name          String
+    phone         String
+    email         String?
+    propertyId    String? // Optional property ID from the listing
+    projectName   String? // Name of the property/project
+    developerName String? // Developer name
+    type          String? // Property type (e.g., Apartment, Villa, etc.)
+    price         Float? // Property price
+    status        LeadStatus @default(ACTIVE)
+    message       String? // Additional message/notes
+    notes         String? // Additional notes for internal use
+    createdAt     DateTime   @default(now())
+    updatedAt     DateTime   @updatedAt
+
+    @@map("leads")
 }
