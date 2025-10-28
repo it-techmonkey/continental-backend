@@ -19,6 +19,13 @@ router.post('/', LeadController.createLead);
 router.get('/', authenticate, isAdmin, LeadController.getAllLeads);
 
 /**
+ * @route   GET /api/leads/dashboard
+ * @desc    Get dashboard counts for leads
+ * @access  Private (Admin only)
+ */
+router.get('/dashboard', authenticate, isAdmin, LeadController.getDashboardStats);
+
+/**
  * @route   GET /api/leads/:id
  * @desc    Get a single lead by ID
  * @access  Private (Admin only)

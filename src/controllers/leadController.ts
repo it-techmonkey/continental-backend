@@ -70,11 +70,41 @@ export class LeadController {
     }
 
     /**
-     * Get all leads
+     * Get dashboard stats
+     */
+    static async getDashboardStats(req: Request, res: Response): Promise<void> {
+        try {
+            const result = await LeadService.getDashboardStats();
+
+            if (result.success) {
+                res.status(200).json(result);
+            } else {
+                res.status(400).json(result);
+            }
+        } catch (error) {
+            console.error('Get dashboard stats controller error:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Internal server error'
+            });
+        }
+    }
+
+    /**
+     * Get all leads with optional filters
+     * Query params: status, type, search
      */
     static async getAllLeads(req: Request, res: Response): Promise<void> {
         try {
-            const result = await LeadService.getAllLeads();
+            const { status, type, search } = req.query;
+
+            const filters = {
+                status: status as string | undefined,
+                type: type as string | undefined,
+                search: search as string | undefined,
+            };
+
+            const result = await LeadService.getAllLeads(filters);
 
             if (result.success) {
                 res.status(200).json(result);

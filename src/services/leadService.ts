@@ -37,11 +37,69 @@ export class LeadService {
     }
 
     /**
-     * Get all leads
+     * Dashboard stats: total and counts by status
      */
-    static async getAllLeads() {
+    static async getDashboardStats() {
         try {
+            const [total, active, due, lost] = await Promise.all([
+                prisma.lead.count(),
+                prisma.lead.count({ where: { status: 'ACTIVE' } }),
+                prisma.lead.count({ where: { status: 'DUE' } }),
+                prisma.lead.count({ where: { status: 'LOST' } }),
+            ]);
+
+            return {
+                success: true,
+                message: 'Dashboard stats retrieved successfully',
+                data: {
+                    total,
+                    active,
+                    due,
+                    lost,
+                },
+            };
+        } catch (error) {
+            console.error('Get dashboard stats error:', error);
+            return {
+                success: false,
+                message: 'Failed to retrieve dashboard stats',
+            };
+        }
+    }
+
+    /**
+     * Get all leads with optional filters
+     */
+    static async getAllLeads(filters?: {
+        status?: string;
+        type?: string;
+        search?: string;
+    }) {
+        try {
+            // Build where clause for filtering
+            const where: any = {};
+
+            // Filter by status
+            if (filters?.status) {
+                where.status = filters.status.toUpperCase();
+            }
+
+            // Filter by type
+            if (filters?.type) {
+                where.type = filters.type;
+            }
+
+            // Search by name, phone, or email
+            if (filters?.search) {
+                where.OR = [
+                    { name: { contains: filters.search, mode: 'insensitive' } },
+                    { phone: { contains: filters.search, mode: 'insensitive' } },
+                    { email: { contains: filters.search, mode: 'insensitive' } },
+                ];
+            }
+
             const leads = await prisma.lead.findMany({
+                where,
                 orderBy: {
                     createdAt: 'desc',
                 },
