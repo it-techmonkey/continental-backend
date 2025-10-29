@@ -5,6 +5,8 @@ import dotenv from 'dotenv';
 import { prisma } from './lib/prisma';
 import authRoutes from './routes/authRoutes';
 import leadRoutes from './routes/leadRoutes';
+import occupantRecordRoutes from './routes/occupantRecordRoutes';
+import paymentRoutes from './routes/paymentRoutes';
 
 // Load environment variables
 dotenv.config();
@@ -60,6 +62,20 @@ app.get('/api', (req: Request, res: Response) => {
                 getAll: '/api/leads (GET) - Admin only',
                 getById: '/api/leads/:id (GET) - Admin only',
                 update: '/api/leads/:id (PUT) - Admin only'
+            },
+            occupantRecords: {
+                create: '/api/occupant-records (POST)',
+                getAll: '/api/occupant-records (GET) - Admin only',
+                getById: '/api/occupant-records/:id (GET) - Admin only',
+                update: '/api/occupant-records/:id (PUT) - Admin only',
+                delete: '/api/occupant-records/:id (DELETE) - Admin only'
+            },
+            payments: {
+                create: '/api/payments (POST) - Admin only',
+                getAll: '/api/payments (GET) - Admin only',
+                getById: '/api/payments/:id (GET) - Admin only',
+                update: '/api/payments/:id (PUT) - Admin only',
+                delete: '/api/payments/:id (DELETE) - Admin only'
             }
         }
     });
@@ -70,6 +86,12 @@ app.use('/api/auth', authRoutes);
 
 // Lead routes
 app.use('/api/leads', leadRoutes);
+
+// Occupant Record routes
+app.use('/api/occupant-records', occupantRecordRoutes);
+
+// Payment routes
+app.use('/api/payments', paymentRoutes);
 
 // Error handling middleware
 app.use((err: Error, req: Request, res: Response, next: NextFunction) => {

@@ -55,3 +55,90 @@ model Lead {
 
     @@map("leads")
 }
+
+// Occupant Record model
+model OccupantRecord {
+    id                Int            @id @default(autoincrement())
+    property_name     String
+    developer_name    String
+    image_url         String?
+    bedrooms          Int?
+    bathrooms         Int?
+    furnishing        Furnishing?
+    price             Int?
+    city              String?
+    location          String?
+    latitude          Float?
+    longitude         Float?
+    property_views    String?
+    amenities         String[]
+    property_type     PropertyType   @default(Rental)
+    market            Market?
+    handover          DateTime?
+    rent              Float?
+    emi               Int?
+    payment_frequency RentFrequency?
+    rental_agreement  String?
+    offplan_agreement String?
+    payment_count     Int?           @default(1)
+    completion_date   DateTime?
+    payments          Payments[]
+    created_at        DateTime       @default(now())
+    updated_at        DateTime       @updatedAt
+
+    @@map("occupant_records")
+}
+
+model Payments {
+    id               Int             @id @default(autoincrement())
+    emi              Int?
+    rent             Int?
+    status           PaymentStatus   @default(due)
+    payment_date     DateTime?
+    payment_proof    String?
+    mode_of_payment  PaymentMode     @default(online)
+    OccupantRecord   OccupantRecord? @relation(fields: [occupantRecordId], references: [id])
+    occupantRecordId Int?
+
+    @@map("payments")
+}
+
+// Payment Status enum
+enum PaymentStatus {
+    due
+    paid
+    overdue
+}
+
+// Payment Mode enum
+enum PaymentMode {
+    online
+    offline
+}
+
+// Property Type enum
+enum PropertyType {
+    Rental
+    OffPlan
+}
+
+// Market enum
+enum Market {
+    Primary
+    Secondary
+}
+
+// Rent Frequency enum
+enum RentFrequency {
+    monthly
+    quarterly
+    yearly
+}
+
+// Furnishing enum
+enum Furnishing {
+    fully_furnished
+    partially_furnished
+    unfurnished
+    kitchen_appliances_only
+}
