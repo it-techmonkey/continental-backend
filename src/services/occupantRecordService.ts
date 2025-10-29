@@ -9,6 +9,9 @@ export class OccupantRecordService {
         try {
             const occupantRecord = await prisma.occupantRecord.create({
                 data: {
+                    name: data.name,
+                    phone: data.phone,
+                    email: data.email,
                     property_name: data.property_name,
                     developer_name: data.developer_name,
                     image_url: data.image_url,
@@ -49,6 +52,9 @@ export class OccupantRecordService {
                 message: 'Occupant record created successfully',
                 data: {
                     id: occupantRecord.id,
+                    name: occupantRecord.name,
+                    phone: occupantRecord.phone,
+                    email: occupantRecord.email,
                     property_name: occupantRecord.property_name,
                     developer_name: occupantRecord.developer_name,
                     image_url: occupantRecord.image_url,
@@ -138,6 +144,9 @@ export class OccupantRecordService {
             // Reorder fields in response
             const orderedRecords = occupantRecords.map(record => ({
                 id: record.id,
+                name: record.name,
+                phone: record.phone,
+                email: record.email,
                 property_name: record.property_name,
                 developer_name: record.developer_name,
                 image_url: record.image_url,
@@ -213,6 +222,9 @@ export class OccupantRecordService {
                 message: 'Occupant record retrieved successfully',
                 data: {
                     id: record.id,
+                    name: record.name,
+                    phone: record.phone,
+                    email: record.email,
                     property_name: record.property_name,
                     developer_name: record.developer_name,
                     image_url: record.image_url,
@@ -278,6 +290,9 @@ export class OccupantRecordService {
                     },
                 },
                 data: {
+                    name: data.name,
+                    phone: data.phone,
+                    email: data.email,
                     property_name: data.property_name,
                     developer_name: data.developer_name,
                     image_url: data.image_url,
@@ -309,6 +324,9 @@ export class OccupantRecordService {
                 message: 'Occupant record updated successfully',
                 data: {
                     id: updatedRecord.id,
+                    name: updatedRecord.name,
+                    phone: updatedRecord.phone,
+                    email: updatedRecord.email,
                     property_name: updatedRecord.property_name,
                     developer_name: updatedRecord.developer_name,
                     image_url: updatedRecord.image_url,

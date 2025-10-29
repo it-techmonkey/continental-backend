@@ -1,6 +1,9 @@
 import { PropertyType, Market, RentFrequency, Furnishing } from '@prisma/client';
 
 export interface CreateOccupantRecordRequest {
+    name: string;
+    phone: string;
+    email?: string;
     property_name: string;
     developer_name: string;
     image_url?: string;
@@ -31,6 +34,9 @@ export interface OccupantRecordResponse {
     message: string;
     data?: {
         id: number;
+        name: string;
+        phone: string;
+        email?: string;
         property_name: string;
         developer_name: string;
         image_url?: string;

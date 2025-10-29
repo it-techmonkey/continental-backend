@@ -8,6 +8,7 @@ export interface CreatePaymentRequest {
     payment_proof?: string;
     mode_of_payment?: PaymentMode;
     occupantRecordId?: number;
+    offplan_agreement?: string;
 }
 
 export interface PaymentResponse {

@@ -59,6 +59,9 @@ model Lead {
 // Occupant Record model
 model OccupantRecord {
     id                Int            @id @default(autoincrement())
+    name              String
+    phone             String
+    email             String?
     property_name     String
     developer_name    String
     image_url         String?

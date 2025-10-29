@@ -17,6 +17,7 @@ export class PaymentController {
                 payment_proof,
                 mode_of_payment,
                 occupantRecordId,
+                offplan_agreement,
             } = req.body;
 
             // Validate enum values
@@ -56,6 +57,7 @@ export class PaymentController {
                 payment_proof,
                 mode_of_payment: mode_of_payment as PaymentMode | undefined,
                 occupantRecordId: occupantRecordId ? parseInt(occupantRecordId) : undefined,
+                offplan_agreement,
             };
 
             const result = await PaymentService.createPayment(paymentData);

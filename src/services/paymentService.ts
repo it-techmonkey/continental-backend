@@ -19,6 +19,16 @@ export class PaymentService {
                 },
             });
 
+            // Update OccupantRecord's offplan_agreement if provided
+            if (data.offplan_agreement && data.occupantRecordId) {
+                await prisma.occupantRecord.update({
+                    where: { id: data.occupantRecordId },
+                    data: {
+                        offplan_agreement: data.offplan_agreement,
+                    },
+                });
+            }
+
             return {
                 success: true,
                 message: 'Payment created successfully',
@@ -49,17 +59,47 @@ export class PaymentService {
 
             const payments = await prisma.payments.findMany({
                 where,
+                include: {
+                    OccupantRecord: {
+                        select: {
+                            property_type: true,
+                            name: true,
+                            property_name: true,
+                            developer_name: true,
+                            phone: true,
+                            email: true,
+                        },
+                    },
+                },
                 orderBy: {
                     payment_date: 'asc', // Most recent upcoming payment_date first (ascending = earliest dates first, nulls last)
                 },
             });
 
+            // Transform the response to flatten occupant record fields
+            const transformedPayments = payments.map(payment => ({
+                id: payment.id,
+                emi: payment.emi,
+                rent: payment.rent,
+                status: payment.status,
+                payment_date: payment.payment_date,
+                payment_proof: payment.payment_proof,
+                mode_of_payment: payment.mode_of_payment,
+                occupantRecordId: payment.occupantRecordId,
+                property_type: payment.OccupantRecord?.property_type || null,
+                name: payment.OccupantRecord?.name || null,
+                property_name: payment.OccupantRecord?.property_name || null,
+                developer_name: payment.OccupantRecord?.developer_name || null,
+                phone: payment.OccupantRecord?.phone || null,
+                email: payment.OccupantRecord?.email || null,
+            }));
+
             return {
                 success: true,
                 message: 'Payments retrieved successfully',
                 data: {
-                    payments,
-                    total: payments.length,
+                    payments: transformedPayments,
+                    total: transformedPayments.length,
                 },
             };
         } catch (error) {
@@ -78,6 +118,22 @@ export class PaymentService {
         try {
             const payment = await prisma.payments.findUnique({
                 where: { id: paymentId },
+                include: {
+                    OccupantRecord: {
+                        select: {
+                            property_type: true,
+                            name: true,
+                            property_name: true,
+                            developer_name: true,
+                            phone: true,
+                            email: true,
+                            image_url: true,
+                            completion_date: true,
+                            rental_agreement: true,
+                            offplan_agreement: true,
+                        },
+                    },
+                },
             });
 
             if (!payment) {
@@ -87,10 +143,32 @@ export class PaymentService {
                 };
             }
 
+            // Transform the response to flatten occupant record fields
+            const transformedPayment = {
+                id: payment.id,
+                emi: payment.emi,
+                rent: payment.rent,
+                status: payment.status,
+                payment_date: payment.payment_date,
+                payment_proof: payment.payment_proof,
+                mode_of_payment: payment.mode_of_payment,
+                occupantRecordId: payment.occupantRecordId,
+                property_type: payment.OccupantRecord?.property_type || null,
+                name: payment.OccupantRecord?.name || null,
+                property_name: payment.OccupantRecord?.property_name || null,
+                developer_name: payment.OccupantRecord?.developer_name || null,
+                phone: payment.OccupantRecord?.phone || null,
+                email: payment.OccupantRecord?.email || null,
+                image_url: payment.OccupantRecord?.image_url || null,
+                completion_date: payment.OccupantRecord?.completion_date || null,
+                rental_agreement: payment.OccupantRecord?.rental_agreement || null,
+                offplan_agreement: payment.OccupantRecord?.offplan_agreement || null,
+            };
+
             return {
                 success: true,
                 message: 'Payment retrieved successfully',
-                data: payment,
+                data: transformedPayment,
             };
         } catch (error) {
             console.error('Get payment by ID error:', error);

@@ -10,6 +10,9 @@ export class OccupantRecordController {
     static async createOccupantRecord(req: Request, res: Response): Promise<void> {
         try {
             const {
+                name,
+                phone,
+                email,
                 property_name,
                 developer_name,
                 image_url,
@@ -36,10 +39,10 @@ export class OccupantRecordController {
             } = req.body;
 
             // Validate required fields
-            if (!property_name || !developer_name) {
+            if (!name || !phone || !property_name || !developer_name) {
                 res.status(400).json({
                     success: false,
-                    message: 'Property name and developer name are required',
+                    message: 'Name, phone, property name and developer name are required',
                 });
                 return;
             }
@@ -111,6 +114,9 @@ export class OccupantRecordController {
             }
 
             const occupantRecordData: CreateOccupantRecordRequest = {
+                name,
+                phone,
+                email,
                 property_name,
                 developer_name,
                 image_url,
@@ -230,6 +236,9 @@ export class OccupantRecordController {
             }
 
             const {
+                name,
+                phone,
+                email,
                 property_name,
                 developer_name,
                 image_url,
@@ -321,6 +330,9 @@ export class OccupantRecordController {
             }
 
             const occupantRecordData: Partial<CreateOccupantRecordRequest> = {
+                name,
+                phone,
+                email,
                 property_name,
                 developer_name,
                 image_url,
