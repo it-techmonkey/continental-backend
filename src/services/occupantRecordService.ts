@@ -562,6 +562,7 @@ export class OccupantRecordService {
             const records = await prisma.occupantRecord.findMany({
                 where,
                 select: {
+                    id: true,
                     developer_name: true,
                     property_name: true,
                     price: true,
