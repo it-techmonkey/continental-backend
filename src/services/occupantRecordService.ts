@@ -7,6 +7,28 @@ export class OccupantRecordService {
      */
     static async createOccupantRecord(data: CreateOccupantRecordRequest) {
         try {
+            // Derive sensible defaults if frontend omits schedule config
+            const isOffPlanInput = (data.property_type || 'Rental') === 'OffPlan';
+            const amountInput = isOffPlanInput ? data.emi : data.rent;
+            const defaultFrequency = amountInput ? 'monthly' : undefined; // default monthly when amount exists
+
+            // Derive count if not provided:
+            // - OffPlan: if completion_date provided, compute months between now and completion, then divide by interval
+            // - Rental: default to 12 months
+            let derivedCount: number | undefined;
+            if (amountInput) {
+                if (isOffPlanInput && data.completion_date) {
+                    const now = new Date();
+                    const completion = new Date(data.completion_date);
+                    const months = (completion.getFullYear() - now.getFullYear()) * 12 + (completion.getMonth() - now.getMonth());
+                    const freq = (data.payment_frequency || defaultFrequency) as 'monthly' | 'quarterly' | 'yearly' | undefined;
+                    const interval = freq === 'monthly' ? 1 : freq === 'quarterly' ? 3 : 12;
+                    derivedCount = Math.max(1, Math.ceil((months > 0 ? months : 1) / interval));
+                } else {
+                    derivedCount = 12;
+                }
+            }
+
             const occupantRecord = await prisma.occupantRecord.create({
                 data: {
                     name: data.name,
@@ -30,10 +52,10 @@ export class OccupantRecordService {
                     handover: data.handover,
                     rent: data.rent,
                     emi: data.emi,
-                    payment_frequency: data.payment_frequency,
+                    payment_frequency: (data.payment_frequency || defaultFrequency) as any,
                     rental_agreement: data.rental_agreement,
                     offplan_agreement: data.offplan_agreement,
-                    payment_count: data.payment_count,
+                    payment_count: (data.payment_count ?? derivedCount),
                     completion_date: data.completion_date,
                 },
                 include: {
@@ -50,9 +72,11 @@ export class OccupantRecordService {
             // Auto-generate payment schedule based on property type
             try {
                 const isOffPlan = (occupantRecord.property_type === 'OffPlan');
-                const paymentCount = occupantRecord.payment_count ?? 0;
-                const frequency = occupantRecord.payment_frequency; // monthly | quarterly | yearly | null
                 const amount = isOffPlan ? occupantRecord.emi : occupantRecord.rent; // choose emi for OffPlan, rent for Rental
+
+                // If frontend omitted fields, ensure defaults are applied here too
+                const frequency = occupantRecord.payment_frequency;
+                const paymentCount = occupantRecord.payment_count ?? 0;
 
                 if (paymentCount > 0 && frequency && amount && amount > 0) {
                     const intervalMonths = frequency === 'monthly' ? 1 : frequency === 'quarterly' ? 3 : 12;

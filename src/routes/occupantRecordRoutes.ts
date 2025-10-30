@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { OccupantRecordController } from '../controllers/occupantRecordController';
 import { authenticate, isAdmin } from '../middleware/authMiddleware';
+import { PaymentController } from '../controllers/paymentController';
 
 const router = Router();
 
@@ -38,6 +39,13 @@ router.get('/maps', authenticate, isAdmin, OccupantRecordController.getOccupantR
  * @access  Private (Admin only)
  */
 router.get('/:id', authenticate, isAdmin, OccupantRecordController.getOccupantRecordById);
+
+/**
+ * @route   GET /api/occupant-records/:id/payments
+ * @desc    Get all payments for an occupant record
+ * @access  Private (Admin only)
+ */
+router.get('/:id/payments', authenticate, isAdmin, PaymentController.getPaymentsByOccupant);
 
 /**
  * @route   PUT /api/occupant-records/:id

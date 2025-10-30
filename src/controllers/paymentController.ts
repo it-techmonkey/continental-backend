@@ -136,6 +136,37 @@ export class PaymentController {
     }
 
     /**
+     * Get all payments for a specific occupant record
+     */
+    static async getPaymentsByOccupant(req: Request, res: Response): Promise<void> {
+        try {
+            const recordId = parseInt(req.params.id);
+
+            if (isNaN(recordId)) {
+                res.status(400).json({
+                    success: false,
+                    message: 'Invalid occupant record ID',
+                });
+                return;
+            }
+
+            const result = await PaymentService.getPaymentsByOccupant(recordId);
+
+            if (result.success) {
+                res.status(200).json(result);
+            } else {
+                res.status(404).json(result);
+            }
+        } catch (error) {
+            console.error('Get payments by occupant controller error:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Internal server error',
+            });
+        }
+    }
+
+    /**
      * Update a payment
      */
     static async updatePayment(req: Request, res: Response): Promise<void> {

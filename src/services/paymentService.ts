@@ -49,6 +49,8 @@ export class PaymentService {
      */
     static async getAllPayments(filters?: {
         status?: string;
+        property_type?: 'Rental' | 'OffPlan';
+        dedupe?: boolean;
     }) {
         try {
             const where: any = {};
@@ -58,7 +60,12 @@ export class PaymentService {
             }
 
             const payments = await prisma.payments.findMany({
-                where,
+                where: {
+                    ...where,
+                    ...(filters?.property_type
+                        ? { OccupantRecord: { property_type: filters.property_type } }
+                        : {}),
+                },
                 include: {
                     OccupantRecord: {
                         select: {
@@ -72,7 +79,7 @@ export class PaymentService {
                     },
                 },
                 orderBy: {
-                    payment_date: 'asc', // Most recent upcoming payment_date first (ascending = earliest dates first, nulls last)
+                    payment_date: 'asc',
                 },
             });
 
@@ -94,21 +101,23 @@ export class PaymentService {
                 email: payment.OccupantRecord?.email || null,
             }));
 
-            // Deduplicate by occupantRecordId, keeping the earliest payment (list is already ordered asc by payment_date)
-            const seen = new Set<number>();
-            const uniquePayments = transformedPayments.filter(p => {
-                if (p.occupantRecordId == null) return true; // keep records without relation as-is
-                if (seen.has(p.occupantRecordId)) return false;
-                seen.add(p.occupantRecordId);
-                return true;
-            });
+            let list = transformedPayments;
+            if (filters?.dedupe !== false) {
+                const seen = new Set<number>();
+                list = transformedPayments.filter(p => {
+                    if (p.occupantRecordId == null) return true;
+                    if (seen.has(p.occupantRecordId)) return false;
+                    seen.add(p.occupantRecordId);
+                    return true;
+                });
+            }
 
             return {
                 success: true,
                 message: 'Payments retrieved successfully',
                 data: {
-                    payments: uniquePayments,
-                    total: uniquePayments.length,
+                    payments: list,
+                    total: list.length,
                 },
             };
         } catch (error) {
@@ -116,6 +125,33 @@ export class PaymentService {
             return {
                 success: false,
                 message: 'Failed to retrieve payments',
+            };
+        }
+    }
+
+    /**
+     * Get all payments by occupant record
+     */
+    static async getPaymentsByOccupant(occupantRecordId: number) {
+        try {
+            const payments = await prisma.payments.findMany({
+                where: { occupantRecordId },
+                orderBy: { payment_date: 'asc' },
+            });
+
+            return {
+                success: true,
+                message: 'Payments retrieved successfully',
+                data: {
+                    payments,
+                    total: payments.length,
+                },
+            };
+        } catch (error) {
+            console.error('Get payments by occupant error:', error);
+            return {
+                success: false,
+                message: 'Failed to retrieve payments by occupant',
             };
         }
     }

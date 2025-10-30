@@ -149,6 +149,61 @@ continental-backend/
 
 ## Development
 
+### 1) Start Postgres via Docker
+
+We include a `docker-compose.yml` for a local Postgres and Adminer UI.
+
+Commands:
+
+```bash
+cd backend-continental
+docker compose up -d
+```
+
+This exposes Postgres on `localhost:5432` and Adminer on `http://localhost:8080`.
+
+### 2) Configure environment
+
+Create a `.env` file in `backend-continental/` (same folder as `package.json`) with:
+
+```
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/continental?schema=public"
+JWT_SECRET="replace_with_strong_secret"
+NODE_ENV=development
+PORT=3500
+```
+
+If you have a hosted Postgres URL, paste it into `DATABASE_URL` instead and the app will use that.
+
+### 3) Install deps and run migrations
+
+```bash
+npm i
+npm run db:generate
+npm run db:migrate
+```
+
+Optionally open Prisma Studio:
+
+```bash
+npm run db:studio
+```
+
+### 4) Start the server
+
+For dev with hot-reload:
+
+```bash
+npm run dev
+```
+
+Build and start:
+
+```bash
+npm run build
+npm start
+```
+
 The server runs on `http://localhost:3500` by default. You can change the port by setting the `PORT` environment variable.
 
 ## Database Setup
