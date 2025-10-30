@@ -446,34 +446,25 @@ export class OccupantRecordService {
                 prisma.occupantRecord.count()
             ]);
 
-            // Calculate ROI (simplified calculation)
-            const totalInvestment = await prisma.occupantRecord.aggregate({
-                where: { price: { not: null } },
-                _sum: { price: true }
-            });
-
-            const totalRentalIncome = await prisma.occupantRecord.aggregate({
+            // Calculate EMI amount due (sum of unpaid EMIs for OffPlan payments)
+            const emiAggregate = await prisma.payments.aggregate({
                 where: {
-                    rent: { not: null },
-                    property_type: 'Rental'
+                    status: { in: ['due', 'overdue'] },
+                    emi: { not: null }
                 },
-                _sum: { rent: true }
+                _sum: { emi: true }
             });
-
-            const roi = totalInvestment._sum.price && totalRentalIncome._sum.rent
-                ? ((totalRentalIncome._sum.rent / totalInvestment._sum.price) * 100).toFixed(2)
-                : 0;
 
             return {
                 success: true,
                 message: 'Dashboard stats retrieved successfully',
                 data: {
-                    totalPropertiesRented: totalRented,
-                    rentalsDue: rentalsDue,
-                    rentalAmountDue: rentalAmountDue._sum.rent || 0,
-                    vacantProperties: vacantProperties,
-                    totalOffPlanProperties: totalOffPlan,
-                    roi: parseFloat(roi.toString())
+                    total_properties_rented: totalRented,
+                    rentals_due: rentalsDue,
+                    rental_amount_due: rentalAmountDue._sum.rent || 0,
+                    vacant_properties: vacantProperties,
+                    total_off_plan_properties: totalOffPlan,
+                    emi_amount_due: emiAggregate._sum.emi || 0
                 }
             };
         } catch (error) {
