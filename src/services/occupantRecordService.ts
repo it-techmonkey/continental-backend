@@ -47,6 +47,47 @@ export class OccupantRecordService {
                 },
             });
 
+            // Auto-generate payment schedule based on property type
+            try {
+                const isOffPlan = (occupantRecord.property_type === 'OffPlan');
+                const paymentCount = occupantRecord.payment_count ?? 0;
+                const frequency = occupantRecord.payment_frequency; // monthly | quarterly | yearly | null
+                const amount = isOffPlan ? occupantRecord.emi : occupantRecord.rent; // choose emi for OffPlan, rent for Rental
+
+                if (paymentCount > 0 && frequency && amount && amount > 0) {
+                    const intervalMonths = frequency === 'monthly' ? 1 : frequency === 'quarterly' ? 3 : 12;
+
+                    const baseDate = occupantRecord.created_at ?? new Date();
+                    const paymentsData: {
+                        emi?: number;
+                        rent?: number;
+                        status: 'due' | 'paid' | 'overdue';
+                        payment_date: Date;
+                        occupantRecordId: number;
+                    }[] = [];
+
+                    for (let i = 0; i < paymentCount; i++) {
+                        const dueDate = new Date(baseDate);
+                        // add months according to interval
+                        dueDate.setMonth(dueDate.getMonth() + i * intervalMonths);
+
+                        paymentsData.push({
+                            ...(isOffPlan ? { emi: amount } : { rent: amount }),
+                            status: 'due',
+                            payment_date: dueDate,
+                            occupantRecordId: occupantRecord.id,
+                        });
+                    }
+
+                    if (paymentsData.length > 0) {
+                        await prisma.payments.createMany({ data: paymentsData });
+                    }
+                }
+            } catch (scheduleError) {
+                // Log and continue; creation of occupant record should not fail due to schedule generation
+                console.error('Auto-generate payments schedule error:', scheduleError);
+            }
+
             return {
                 success: true,
                 message: 'Occupant record created successfully',

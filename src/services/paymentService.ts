@@ -94,12 +94,21 @@ export class PaymentService {
                 email: payment.OccupantRecord?.email || null,
             }));
 
+            // Deduplicate by occupantRecordId, keeping the earliest payment (list is already ordered asc by payment_date)
+            const seen = new Set<number>();
+            const uniquePayments = transformedPayments.filter(p => {
+                if (p.occupantRecordId == null) return true; // keep records without relation as-is
+                if (seen.has(p.occupantRecordId)) return false;
+                seen.add(p.occupantRecordId);
+                return true;
+            });
+
             return {
                 success: true,
                 message: 'Payments retrieved successfully',
                 data: {
-                    payments: transformedPayments,
-                    total: transformedPayments.length,
+                    payments: uniquePayments,
+                    total: uniquePayments.length,
                 },
             };
         } catch (error) {
