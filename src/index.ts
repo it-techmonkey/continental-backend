@@ -7,6 +7,7 @@ import authRoutes from './routes/authRoutes';
 import leadRoutes from './routes/leadRoutes';
 import occupantRecordRoutes from './routes/occupantRecordRoutes';
 import paymentRoutes from './routes/paymentRoutes';
+import uploadRoutes from './routes/uploadRoutes';
 
 // Load environment variables
 dotenv.config();
@@ -92,6 +93,9 @@ app.use('/api/occupant-records', occupantRecordRoutes);
 
 // Payment routes
 app.use('/api/payments', paymentRoutes);
+
+// Upload routes
+app.use('/api/upload', uploadRoutes);
 
 // Error handling middleware
 app.use((err: Error, req: Request, res: Response, next: NextFunction) => {

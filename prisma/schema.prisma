@@ -12,13 +12,15 @@ datasource db {
 
 // User model with authentication
 model User {
-    id        Int      @id @default(autoincrement())
-    email     String   @unique
-    name      String?
-    password  String
-    role      Role     @default(USER)
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
+    id           Int      @id @default(autoincrement())
+    email        String   @unique
+    name         String?
+    phone        String?  // Phone number
+    password     String
+    role         Role     @default(USER)
+    profileImage String?  // Profile image URL from S3
+    createdAt    DateTime @default(now())
+    updatedAt    DateTime @updatedAt
 
     @@map("users")
 }

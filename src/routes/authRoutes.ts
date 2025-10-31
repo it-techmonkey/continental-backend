@@ -25,5 +25,12 @@ router.post('/login', AuthController.login);
  */
 router.get('/profile', authenticate, AuthController.getProfile);
 
+/**
+ * @route   PUT /api/auth/profile
+ * @desc    Update current user profile
+ * @access  Private
+ */
+router.put('/profile', authenticate, AuthController.updateProfile);
+
 export default router;
 

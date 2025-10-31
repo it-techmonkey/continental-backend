@@ -161,7 +161,32 @@ export class AuthService {
                 id: true,
                 email: true,
                 name: true,
+                phone: true,
                 role: true,
+                profileImage: true,
+                createdAt: true
+            }
+        });
+    }
+
+    /**
+     * Update user by ID
+     */
+    static async updateUserById(userId: number, data: { name?: string; phone?: string; profileImage?: string }) {
+        return await prisma.user.update({
+            where: { id: userId },
+            data: {
+                ...(data.name !== undefined && { name: data.name }),
+                ...(data.phone !== undefined && { phone: data.phone }),
+                ...(data.profileImage !== undefined && { profileImage: data.profileImage }),
+            },
+            select: {
+                id: true,
+                email: true,
+                name: true,
+                phone: true,
+                role: true,
+                profileImage: true,
                 createdAt: true
             }
         });
