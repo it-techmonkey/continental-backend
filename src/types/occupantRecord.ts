@@ -8,12 +8,14 @@ export interface CreateOccupantRecordRequest {
     developer_name: string;
     image_url?: string;
     property_type?: PropertyType;
+    home_type?: string;
     market?: Market;
     price?: number;
     rent?: number;
     emi?: number;
     city?: string;
     location?: string;
+    locality?: string;
     latitude?: number;
     longitude?: number;
     bedrooms?: number;
@@ -41,6 +43,7 @@ export interface OccupantRecordResponse {
         developer_name: string;
         image_url?: string;
         property_type: PropertyType;
+        home_type?: string;
         market?: Market;
         bedrooms?: number;
         bathrooms?: number;
@@ -48,6 +51,7 @@ export interface OccupantRecordResponse {
         price?: number;
         city?: string;
         location?: string;
+        locality?: string;
         latitude?: number;
         longitude?: number;
         property_views?: string;

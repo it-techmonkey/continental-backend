@@ -2,148 +2,157 @@
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
-    provider = "prisma-client-js"
+  provider = "prisma-client-js"
 }
 
 datasource db {
-    provider = "postgresql"
-    url      = env("DATABASE_URL")
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 // User model with authentication
 model User {
-    id           Int      @id @default(autoincrement())
-    email        String   @unique
-    name         String?
-    phone        String?  // Phone number
-    password     String
-    role         Role     @default(USER)
-    profileImage String?  // Profile image URL from S3
-    createdAt    DateTime @default(now())
-    updatedAt    DateTime @updatedAt
+  id           Int      @id @default(autoincrement())
+  email        String   @unique
+  name         String?
+  phone        String? // Phone number
+  password     String
+  role         Role     @default(USER)
+  profileImage String? // Profile image URL from S3
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
-    @@map("users")
+  @@map("users")
 }
 
 // Role enum
 enum Role {
-    USER
-    ADMIN
+  USER
+  ADMIN
 }
 
 // Lead Status enum
 enum LeadStatus {
-    ACTIVE
-    LOST
-    DUE
+  ACTIVE
+  LOST
+  DUE
 }
 
 // Lead model for contact form submissions
 model Lead {
-    id            Int        @id @default(autoincrement())
-    name          String
-    phone         String
-    email         String?
-    propertyId    String? // Optional property ID from the listing
-    projectName   String? // Name of the property/project
-    developerName String? // Developer name
-    type          String? // Property type (e.g., Apartment, Villa, etc.)
-    price         Float? // Property price
-    status        LeadStatus @default(ACTIVE)
-    message       String? // Additional message/notes
-    notes         String? // Additional notes for internal use
-    createdAt     DateTime   @default(now())
-    updatedAt     DateTime   @updatedAt
+  id            Int        @id @default(autoincrement())
+  name          String
+  phone         String
+  email         String?
+  propertyId    String? // Optional property ID from the listing
+  projectName   String? // Name of the property/project
+  developerName String? // Developer name
+  type          String? // Property type (e.g., Apartment, Villa, etc.)
+  price         Float? // Property price
+  status        LeadStatus @default(ACTIVE)
+  message       String? // Additional message/notes
+  notes         String? // Additional notes for internal use
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
 
-    @@map("leads")
+  @@map("leads")
 }
 
 // Occupant Record model
 model OccupantRecord {
-    id                Int            @id @default(autoincrement())
-    name              String
-    phone             String
-    email             String?
-    property_name     String
-    developer_name    String
-    image_url         String?
-    bedrooms          Int?
-    bathrooms         Int?
-    furnishing        Furnishing?
-    price             Int?
-    city              String?
-    location          String?
-    latitude          Float?
-    longitude         Float?
-    property_views    String?
-    amenities         String[]
-    property_type     PropertyType   @default(Rental)
-    market            Market?
-    handover          DateTime?
-    rent              Float?
-    emi               Int?
-    payment_frequency RentFrequency?
-    rental_agreement  String?
-    offplan_agreement String?
-    payment_count     Int?           @default(1)
-    completion_date   DateTime?
-    payments          Payments[]
-    created_at        DateTime       @default(now())
-    updated_at        DateTime       @updatedAt
+  id                Int            @id @default(autoincrement())
+  name              String
+  phone             String
+  email             String?
+  property_name     String
+  developer_name    String
+  image_url         String?
+  bedrooms          Int?
+  bathrooms         Int?
+  furnishing        Furnishing?
+  price             Int?
+  city              String?
+  location          String?
+  locality          String?
+  latitude          Float?
+  longitude         Float?
+  property_views    String?
+  amenities         String[]
+  property_type     PropertyType   @default(Rental)
+  home_type         String? // Apartment, Villa, Townhouse
+  market            Market?
+  handover          DateTime?
+  rent              Float?
+  emi               Int?
+  payment_frequency RentFrequency?
+  rental_agreement  String?
+  offplan_agreement String?
+  payment_count     Int?           @default(1)
+  completion_date   DateTime?
+  payments          Payments[]
+  created_at        DateTime       @default(now())
+  updated_at        DateTime       @updatedAt
 
-    @@map("occupant_records")
+  @@map("occupant_records")
 }
 
 model Payments {
-    id               Int             @id @default(autoincrement())
-    emi              Int?
-    rent             Int?
-    status           PaymentStatus   @default(due)
-    payment_date     DateTime?
-    payment_proof    String?
-    mode_of_payment  PaymentMode     @default(online)
-    OccupantRecord   OccupantRecord? @relation(fields: [occupantRecordId], references: [id])
-    occupantRecordId Int?
+  id               Int             @id @default(autoincrement())
+  emi              Int?
+  rent             Int?
+  status           PaymentStatus   @default(due)
+  payment_date     DateTime?
+  payment_proof    String?
+  mode_of_payment  PaymentMode     @default(online)
+  OccupantRecord   OccupantRecord? @relation(fields: [occupantRecordId], references: [id])
+  occupantRecordId Int?
 
-    @@map("payments")
+  @@map("payments")
 }
 
 // Payment Status enum
 enum PaymentStatus {
-    due
-    paid
-    overdue
+  due
+  paid
+  overdue
 }
 
 // Payment Mode enum
 enum PaymentMode {
-    online
-    offline
+  online
+  offline
 }
 
-// Property Type enum
+// Property Type enum (Rental or OffPlan)
 enum PropertyType {
-    Rental
-    OffPlan
+  Rental
+  OffPlan
+}
+
+// Home Type enum (Apartment, Villa, Townhouse)
+enum HomeType {
+  Apartment
+  Villa
+  Townhouse
 }
 
 // Market enum
 enum Market {
-    Primary
-    Secondary
+  Primary
+  Secondary
 }
 
 // Rent Frequency enum
 enum RentFrequency {
-    monthly
-    quarterly
-    yearly
+  monthly
+  quarterly
+  yearly
 }
 
 // Furnishing enum
 enum Furnishing {
-    fully_furnished
-    partially_furnished
-    unfurnished
-    kitchen_appliances_only
+  fully_furnished
+  partially_furnished
+  unfurnished
+  kitchen_appliances_only
 }

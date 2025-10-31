@@ -82,10 +82,12 @@ export class PaymentController {
      */
     static async getAllPayments(req: Request, res: Response): Promise<void> {
         try {
-            const { status } = req.query;
+            const { status, property_type, dedupe } = req.query;
 
             const filters = {
                 status: status as string | undefined,
+                property_type: property_type as 'Rental' | 'OffPlan' | undefined,
+                dedupe: dedupe === 'false' ? false : true,
             };
 
             const result = await PaymentService.getAllPayments(filters);

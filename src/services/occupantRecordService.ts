@@ -43,11 +43,13 @@ export class OccupantRecordService {
                     price: data.price,
                     city: data.city,
                     location: data.location,
+                    locality: data.locality,
                     latitude: data.latitude,
                     longitude: data.longitude,
                     property_views: data.property_views,
                     amenities: data.amenities,
                     property_type: data.property_type || 'Rental',
+                    home_type: data.home_type,
                     market: data.market,
                     handover: data.handover,
                     rent: data.rent,
@@ -72,39 +74,60 @@ export class OccupantRecordService {
             // Auto-generate payment schedule based on property type
             try {
                 const isOffPlan = (occupantRecord.property_type === 'OffPlan');
-                const amount = isOffPlan ? occupantRecord.emi : occupantRecord.rent; // choose emi for OffPlan, rent for Rental
-
-                // If frontend omitted fields, ensure defaults are applied here too
                 const frequency = occupantRecord.payment_frequency;
                 const paymentCount = occupantRecord.payment_count ?? 0;
 
-                if (paymentCount > 0 && frequency && amount && amount > 0) {
-                    const intervalMonths = frequency === 'monthly' ? 1 : frequency === 'quarterly' ? 3 : 12;
-
-                    const baseDate = occupantRecord.created_at ?? new Date();
-                    const paymentsData: {
-                        emi?: number;
-                        rent?: number;
-                        status: 'due' | 'paid' | 'overdue';
-                        payment_date: Date;
-                        occupantRecordId: number;
-                    }[] = [];
-
-                    for (let i = 0; i < paymentCount; i++) {
-                        const dueDate = new Date(baseDate);
-                        // add months according to interval
-                        dueDate.setMonth(dueDate.getMonth() + i * intervalMonths);
-
-                        paymentsData.push({
-                            ...(isOffPlan ? { emi: amount } : { rent: amount }),
-                            status: 'due',
-                            payment_date: dueDate,
-                            occupantRecordId: occupantRecord.id,
-                        });
+                if (paymentCount > 0 && frequency) {
+                    // Calculate EMI for OffPlan: total price / payment count
+                    let amount: number | null = null;
+                    if (isOffPlan && occupantRecord.price && occupantRecord.price > 0) {
+                        amount = Math.round(occupantRecord.price / paymentCount);
+                    } else if (!isOffPlan && occupantRecord.rent && occupantRecord.rent > 0) {
+                        amount = occupantRecord.rent;
                     }
 
-                    if (paymentsData.length > 0) {
-                        await prisma.payments.createMany({ data: paymentsData });
+                    if (amount && amount > 0) {
+                        const intervalMonths = frequency === 'monthly' ? 1 : frequency === 'quarterly' ? 3 : 12;
+
+                        const baseDate = occupantRecord.created_at ?? new Date();
+                        const paymentsData: {
+                            emi?: number;
+                            rent?: number;
+                            status: 'due' | 'paid' | 'overdue';
+                            payment_date: Date;
+                            occupantRecordId: number;
+                        }[] = [];
+
+                        for (let i = 0; i < paymentCount; i++) {
+                            const dueDate = new Date(baseDate);
+                            // Calculate months to add
+                            const monthsToAdd = i * intervalMonths;
+                            
+                            // Get the day of month from the base date
+                            const baseDay = dueDate.getDate();
+                            
+                            // Add months to the date
+                            dueDate.setMonth(dueDate.getMonth() + monthsToAdd);
+                            
+                            // If the day has changed (e.g., Jan 31 -> Feb becomes Mar 3),
+                            // set it back to the last valid day of the month
+                            if (dueDate.getDate() !== baseDay) {
+                                // Get the last day of the new month
+                                const lastDayOfMonth = new Date(dueDate.getFullYear(), dueDate.getMonth() + 1, 0).getDate();
+                                dueDate.setDate(lastDayOfMonth);
+                            }
+
+                            paymentsData.push({
+                                ...(isOffPlan ? { emi: amount } : { rent: amount }),
+                                status: 'due',
+                                payment_date: dueDate,
+                                occupantRecordId: occupantRecord.id,
+                            });
+                        }
+
+                        if (paymentsData.length > 0) {
+                            await prisma.payments.createMany({ data: paymentsData });
+                        }
                     }
                 }
             } catch (scheduleError) {
@@ -294,6 +317,7 @@ export class OccupantRecordService {
                     developer_name: record.developer_name,
                     image_url: record.image_url,
                     property_type: record.property_type,
+                    home_type: record.home_type,
                     market: record.market,
                     price: record.price,
                     rent: record.rent,
@@ -302,6 +326,7 @@ export class OccupantRecordService {
                     payment_frequency: record.payment_frequency,
                     city: record.city,
                     location: record.location,
+                    locality: record.locality,
                     latitude: record.latitude,
                     longitude: record.longitude,
                     bedrooms: record.bedrooms,
@@ -367,11 +392,13 @@ export class OccupantRecordService {
                     price: data.price,
                     city: data.city,
                     location: data.location,
+                    locality: data.locality,
                     latitude: data.latitude,
                     longitude: data.longitude,
                     property_views: data.property_views,
                     amenities: data.amenities,
                     property_type: data.property_type,
+                    home_type: data.home_type,
                     market: data.market,
                     handover: data.handover,
                     rent: data.rent,
@@ -396,6 +423,7 @@ export class OccupantRecordService {
                     developer_name: updatedRecord.developer_name,
                     image_url: updatedRecord.image_url,
                     property_type: updatedRecord.property_type,
+                    home_type: updatedRecord.home_type,
                     market: updatedRecord.market,
                     price: updatedRecord.price,
                     rent: updatedRecord.rent,
