@@ -93,6 +93,8 @@ export class PaymentService {
                 payment_proof: payment.payment_proof,
                 mode_of_payment: payment.mode_of_payment,
                 occupantRecordId: payment.occupantRecordId,
+                created_at: payment.created_at,
+                updated_at: payment.updated_at,
                 property_type: payment.OccupantRecord?.property_type || null,
                 name: payment.OccupantRecord?.name || null,
                 property_name: payment.OccupantRecord?.property_name || null,

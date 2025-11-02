@@ -106,6 +106,8 @@ model Payments {
   mode_of_payment  PaymentMode     @default(online)
   OccupantRecord   OccupantRecord? @relation(fields: [occupantRecordId], references: [id])
   occupantRecordId Int?
+  created_at       DateTime?       @default(now())
+  updated_at       DateTime?       @updatedAt
 
   @@map("payments")
 }
@@ -121,6 +123,7 @@ enum PaymentStatus {
 enum PaymentMode {
   online
   offline
+  cheque
 }
 
 // Property Type enum (Rental or OffPlan)

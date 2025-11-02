@@ -151,9 +151,9 @@ export class AuthController {
                 return;
             }
 
-            const { name, phone } = req.body;
+            const { name, phone, profileImage } = req.body;
 
-            const updatedUser = await AuthService.updateUserById(userId, { name, phone });
+            const updatedUser = await AuthService.updateUserById(userId, { name, phone, profileImage });
 
             if (!updatedUser) {
                 res.status(404).json({
