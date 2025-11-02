@@ -22,7 +22,7 @@ export class PaymentController {
 
             // Validate enum values
             const validStatusValues = ['due', 'paid', 'overdue'];
-            const validPaymentModeValues = ['online', 'offline', 'cheque'];
+            const validPaymentModeValues = ['online', 'cash', 'cheque'];
 
             if (status && !validStatusValues.includes(status)) {
                 res.status(400).json({
@@ -195,7 +195,7 @@ export class PaymentController {
 
             // Validate enum values
             const validStatusValues = ['due', 'paid', 'overdue'];
-            const validPaymentModeValues = ['online', 'offline', 'cheque'];
+            const validPaymentModeValues = ['online', 'cash', 'cheque'];
 
             if (status && !validStatusValues.includes(status)) {
                 res.status(400).json({
