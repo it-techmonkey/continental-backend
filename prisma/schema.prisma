@@ -89,6 +89,10 @@ model OccupantRecord {
   offplan_agreement String?
   payment_count     Int?           @default(1)
   completion_date   DateTime?
+  dld               Int? // DLD charges
+  quood             Int? // QUOOD charges
+  other_charges     Int? // Other charges
+  penalties         Int? // Penalties
   payments          Payments[]
   created_at        DateTime       @default(now())
   updated_at        DateTime       @updatedAt

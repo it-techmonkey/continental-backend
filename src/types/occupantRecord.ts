@@ -29,6 +29,10 @@ export interface CreateOccupantRecordRequest {
     offplan_agreement?: string;
     payment_count?: number;
     completion_date?: Date;
+    dld?: number;
+    quood?: number;
+    other_charges?: number;
+    penalties?: number;
 }
 
 export interface OccupantRecordResponse {
@@ -64,6 +68,10 @@ export interface OccupantRecordResponse {
         offplan_agreement?: string;
         payment_count?: number;
         completion_date?: Date;
+        dld?: number;
+        quood?: number;
+        other_charges?: number;
+        penalties?: number;
         created_at: Date;
         updated_at: Date;
     };

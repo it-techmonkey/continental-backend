@@ -59,6 +59,10 @@ export class OccupantRecordService {
                     offplan_agreement: data.offplan_agreement,
                     payment_count: (data.payment_count ?? derivedCount),
                     completion_date: data.completion_date,
+                    dld: data.dld,
+                    quood: data.quood,
+                    other_charges: data.other_charges,
+                    penalties: data.penalties,
                 },
                 include: {
                     payments: {

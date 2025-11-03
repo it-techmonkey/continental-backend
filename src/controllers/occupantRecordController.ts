@@ -38,6 +38,10 @@ export class OccupantRecordController {
                 offplan_agreement,
                 payment_count,
                 completion_date,
+                dld,
+                quood,
+                other_charges,
+                penalties,
             } = req.body;
 
             // Validate required fields
@@ -144,6 +148,10 @@ export class OccupantRecordController {
                 offplan_agreement,
                 payment_count,
                 completion_date: completion_date ? new Date(completion_date) : undefined,
+                dld: dld ? parseInt(String(dld)) : undefined,
+                quood: quood ? parseInt(String(quood)) : undefined,
+                other_charges: other_charges ? parseInt(String(other_charges)) : undefined,
+                penalties: penalties ? parseInt(String(penalties)) : undefined,
             };
 
             const result = await OccupantRecordService.createOccupantRecord(occupantRecordData);
