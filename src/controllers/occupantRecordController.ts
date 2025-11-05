@@ -276,6 +276,10 @@ export class OccupantRecordController {
                 offplan_agreement,
                 payment_count,
                 completion_date,
+                dld,
+                quood,
+                other_charges,
+                penalties,
             } = req.body;
 
             // Validate enum values
@@ -372,6 +376,10 @@ export class OccupantRecordController {
                 offplan_agreement,
                 payment_count,
                 completion_date: completion_date ? new Date(completion_date) : undefined,
+                dld,
+                quood,
+                other_charges,
+                penalties,
             };
 
             const result = await OccupantRecordService.updateOccupantRecord(recordId, occupantRecordData);

@@ -376,6 +376,43 @@ export class OccupantRecordService {
                 };
             }
 
+            // Build update data object, only including fields that are explicitly provided
+            const updateData: any = {};
+            
+            if (data.name !== undefined) updateData.name = data.name;
+            if (data.phone !== undefined) updateData.phone = data.phone;
+            if (data.email !== undefined) updateData.email = data.email;
+            if (data.property_name !== undefined) updateData.property_name = data.property_name;
+            if (data.developer_name !== undefined) updateData.developer_name = data.developer_name;
+            if (data.image_url !== undefined) updateData.image_url = data.image_url;
+            if (data.bedrooms !== undefined) updateData.bedrooms = data.bedrooms;
+            if (data.bathrooms !== undefined) updateData.bathrooms = data.bathrooms;
+            if (data.furnishing !== undefined) updateData.furnishing = data.furnishing;
+            if (data.price !== undefined) updateData.price = data.price;
+            if (data.city !== undefined) updateData.city = data.city;
+            if (data.location !== undefined) updateData.location = data.location;
+            if (data.locality !== undefined) updateData.locality = data.locality;
+            if (data.latitude !== undefined) updateData.latitude = data.latitude;
+            if (data.longitude !== undefined) updateData.longitude = data.longitude;
+            if (data.property_views !== undefined) updateData.property_views = data.property_views;
+            if (data.amenities !== undefined) updateData.amenities = data.amenities;
+            if (data.property_type !== undefined) updateData.property_type = data.property_type;
+            if (data.home_type !== undefined) updateData.home_type = data.home_type;
+            if (data.market !== undefined) updateData.market = data.market;
+            if (data.handover !== undefined) updateData.handover = data.handover;
+            if (data.rent !== undefined) updateData.rent = data.rent;
+            if (data.emi !== undefined) updateData.emi = data.emi;
+            if (data.payment_frequency !== undefined) updateData.payment_frequency = data.payment_frequency;
+            if (data.rental_agreement !== undefined) updateData.rental_agreement = data.rental_agreement;
+            if (data.offplan_agreement !== undefined) updateData.offplan_agreement = data.offplan_agreement;
+            if (data.payment_count !== undefined) updateData.payment_count = data.payment_count;
+            if (data.completion_date !== undefined) updateData.completion_date = data.completion_date;
+            // Only update charge fields if they are explicitly provided (including null to clear)
+            if (data.dld !== undefined) updateData.dld = data.dld;
+            if (data.quood !== undefined) updateData.quood = data.quood;
+            if (data.other_charges !== undefined) updateData.other_charges = data.other_charges;
+            if (data.penalties !== undefined) updateData.penalties = data.penalties;
+
             const updatedRecord = await prisma.occupantRecord.update({
                 where: { id: recordId },
                 include: {
@@ -387,36 +424,7 @@ export class OccupantRecordService {
                         },
                     },
                 },
-                data: {
-                    name: data.name,
-                    phone: data.phone,
-                    email: data.email,
-                    property_name: data.property_name,
-                    developer_name: data.developer_name,
-                    image_url: data.image_url,
-                    bedrooms: data.bedrooms,
-                    bathrooms: data.bathrooms,
-                    furnishing: data.furnishing,
-                    price: data.price,
-                    city: data.city,
-                    location: data.location,
-                    locality: data.locality,
-                    latitude: data.latitude,
-                    longitude: data.longitude,
-                    property_views: data.property_views,
-                    amenities: data.amenities,
-                    property_type: data.property_type,
-                    home_type: data.home_type,
-                    market: data.market,
-                    handover: data.handover,
-                    rent: data.rent,
-                    emi: data.emi,
-                    payment_frequency: data.payment_frequency,
-                    rental_agreement: data.rental_agreement,
-                    offplan_agreement: data.offplan_agreement,
-                    payment_count: data.payment_count,
-                    completion_date: data.completion_date,
-                },
+                data: updateData,
             });
 
             return {
@@ -451,6 +459,10 @@ export class OccupantRecordService {
                     offplan_agreement: updatedRecord.offplan_agreement,
                     payment_count: updatedRecord.payment_count,
                     completion_date: updatedRecord.completion_date,
+                    dld: updatedRecord.dld ?? null,
+                    quood: updatedRecord.quood ?? null,
+                    other_charges: updatedRecord.other_charges ?? null,
+                    penalties: updatedRecord.penalties ?? null,
                     payments: updatedRecord.payments,
                     created_at: updatedRecord.created_at,
                     updated_at: updatedRecord.updated_at,
