@@ -89,7 +89,7 @@ export class OccupantRecordService {
                         emi?: number;
                         rent?: number;
                         status: 'due' | 'paid' | 'overdue';
-                        payment_date: Date;
+                        payment_date: Date | null;
                         occupantRecordId: number;
                     }[] = [];
 
@@ -119,13 +119,14 @@ export class OccupantRecordService {
                             dueDate.setDate(lastDayOfMonth);
                         }
 
-                        // For OffPlan: create empty payment (no emi)
-                        // For Rental: include rent amount
+                        // For OffPlan: create empty payment (no emi, no date)
+                        // For Rental: include rent amount and date
                         if (isOffPlan) {
                             paymentsData.push({
                                 // No emi value - will be filled by user later
+                                // No payment_date - will be set when user fills in payment
                                 status: 'due',
-                                payment_date: dueDate,
+                                payment_date: null, // No date for empty off-plan payments
                                 occupantRecordId: occupantRecord.id,
                             });
                         } else if (amount && amount > 0) {
