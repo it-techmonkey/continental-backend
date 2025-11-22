@@ -577,6 +577,14 @@ export class OccupantRecordService {
                 _sum: { emi: true }
             });
 
+            // Calculate total property price (sum of all property prices - both Rental and Off Plan)
+            const totalPropertyPrice = await prisma.occupantRecord.aggregate({
+                where: {
+                    price: { not: null }
+                },
+                _sum: { price: true }
+            });
+
             return {
                 success: true,
                 message: 'Dashboard stats retrieved successfully',
@@ -586,7 +594,8 @@ export class OccupantRecordService {
                     rental_amount_due: rentalAmountDue._sum.rent || 0,
                     vacant_properties: vacantProperties,
                     total_off_plan_properties: totalOffPlan,
-                    emi_amount_due: emiAggregate._sum.emi || 0
+                    emi_amount_due: emiAggregate._sum.emi || 0,
+                    total_property_price: totalPropertyPrice._sum.price || 0
                 }
             };
         } catch (error) {

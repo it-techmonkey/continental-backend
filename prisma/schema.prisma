@@ -70,7 +70,7 @@ model OccupantRecord {
   bedrooms          Int?
   bathrooms         Int?
   furnishing        Furnishing?
-  price             Int?
+  price             Int?           @default(0)
   city              String?
   location          String?
   locality          String?
