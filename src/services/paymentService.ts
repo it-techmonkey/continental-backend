@@ -154,6 +154,7 @@ export class PaymentService {
             return {
                 success: false,
                 message: 'Failed to retrieve payments by occupant',
+                error: (error as Error).message,
             };
         }
     }

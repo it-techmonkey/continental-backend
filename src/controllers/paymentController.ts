@@ -157,7 +157,7 @@ export class PaymentController {
             if (result.success) {
                 res.status(200).json(result);
             } else {
-                res.status(404).json(result);
+                res.status(500).json(result);
             }
         } catch (error) {
             console.error('Get payments by occupant controller error:', error);
