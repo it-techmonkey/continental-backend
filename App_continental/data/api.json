@@ -1,0 +1,455 @@
+{
+	"info": {
+		"_postman_id": "4405b299-19eb-4b0c-a395-40d383d1be74",
+		"name": "Development Ready",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "16891509",
+		"_collection_link": "https://adfadfa-8643.postman.co/workspace/Continental-~82e0c278-75fb-4a78-9b51-478b3452bb7d/collection/40016167-4405b299-19eb-4b0c-a395-40d383d1be74?action=share&source=collection_link&creator=16891509"
+	},
+	"item": [
+		{
+			"name": "Login",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\"email\":\"admin@gmail.com\",\"password\":\"admin@123\"}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:3500/api/auth/login",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3500",
+					"path": [
+						"api",
+						"auth",
+						"login"
+					]
+				}
+			},
+			"response": [
+				{
+					"name": "Login",
+					"originalRequest": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"email\":\"admin@gmail.com\",\"password\":\"admin@123\"}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:3500/api/auth/login",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3500",
+							"path": [
+								"api",
+								"auth",
+								"login"
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": null,
+					"header": [
+						{
+							"key": "Content-Security-Policy",
+							"value": "default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests"
+						},
+						{
+							"key": "Cross-Origin-Opener-Policy",
+							"value": "same-origin"
+						},
+						{
+							"key": "Cross-Origin-Resource-Policy",
+							"value": "same-origin"
+						},
+						{
+							"key": "Origin-Agent-Cluster",
+							"value": "?1"
+						},
+						{
+							"key": "Referrer-Policy",
+							"value": "no-referrer"
+						},
+						{
+							"key": "Strict-Transport-Security",
+							"value": "max-age=15552000; includeSubDomains"
+						},
+						{
+							"key": "X-Content-Type-Options",
+							"value": "nosniff"
+						},
+						{
+							"key": "X-DNS-Prefetch-Control",
+							"value": "off"
+						},
+						{
+							"key": "X-Download-Options",
+							"value": "noopen"
+						},
+						{
+							"key": "X-Frame-Options",
+							"value": "SAMEORIGIN"
+						},
+						{
+							"key": "X-Permitted-Cross-Domain-Policies",
+							"value": "none"
+						},
+						{
+							"key": "X-XSS-Protection",
+							"value": "0"
+						},
+						{
+							"key": "Access-Control-Allow-Origin",
+							"value": "*"
+						},
+						{
+							"key": "Content-Type",
+							"value": "application/json; charset=utf-8"
+						},
+						{
+							"key": "Content-Length",
+							"value": "339"
+						},
+						{
+							"key": "ETag",
+							"value": "W/\"153-WztPDeIEbhN+d0vI3LjfqMu0PBE\""
+						},
+						{
+							"key": "Date",
+							"value": "Wed, 29 Oct 2025 00:35:00 GMT"
+						},
+						{
+							"key": "Connection",
+							"value": "keep-alive"
+						},
+						{
+							"key": "Keep-Alive",
+							"value": "timeout=5"
+						}
+					],
+					"cookie": [],
+					"body": "{\n    \"success\": true,\n    \"message\": \"Login successful\",\n    \"data\": {\n        \"user\": {\n            \"id\": 1,\n            \"email\": \"admin@gmail.com\",\n            \"name\": \"Admin User\",\n            \"role\": \"ADMIN\"\n        },\n        \"token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsImVtYWlsIjoiYWRtaW5AZ21haWwuY29tIiwicm9sZSI6IkFETUlOIiwiaWF0IjoxNzYxNjk4MTAwLCJleHAiOjE3NjE3ODQ1MDB9.XMVR2-sYIgqxkQTCuTLEBY4-fZ4FATQsANOrC3_FXlA\"\n    }\n}"
+				}
+			]
+		},
+		{
+			"name": "Signup",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\"email\":\"chinmay@example.com\",\"password\":\"password123\",\"name\":\"John Doe\"}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:3500/api/auth/signup",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3500",
+					"path": [
+						"api",
+						"auth",
+						"signup"
+					]
+				}
+			},
+			"response": [
+				{
+					"name": "success",
+					"originalRequest": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"email\":\"chinmay@example.com\",\"password\":\"password123\",\"name\":\"John Doe\"}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:3500/api/auth/signup",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3500",
+							"path": [
+								"api",
+								"auth",
+								"signup"
+							]
+						}
+					},
+					"status": "Created",
+					"code": 201,
+					"_postman_previewlanguage": null,
+					"header": [
+						{
+							"key": "Content-Security-Policy",
+							"value": "default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests"
+						},
+						{
+							"key": "Cross-Origin-Opener-Policy",
+							"value": "same-origin"
+						},
+						{
+							"key": "Cross-Origin-Resource-Policy",
+							"value": "same-origin"
+						},
+						{
+							"key": "Origin-Agent-Cluster",
+							"value": "?1"
+						},
+						{
+							"key": "Referrer-Policy",
+							"value": "no-referrer"
+						},
+						{
+							"key": "Strict-Transport-Security",
+							"value": "max-age=15552000; includeSubDomains"
+						},
+						{
+							"key": "X-Content-Type-Options",
+							"value": "nosniff"
+						},
+						{
+							"key": "X-DNS-Prefetch-Control",
+							"value": "off"
+						},
+						{
+							"key": "X-Download-Options",
+							"value": "noopen"
+						},
+						{
+							"key": "X-Frame-Options",
+							"value": "SAMEORIGIN"
+						},
+						{
+							"key": "X-Permitted-Cross-Domain-Policies",
+							"value": "none"
+						},
+						{
+							"key": "X-XSS-Protection",
+							"value": "0"
+						},
+						{
+							"key": "Access-Control-Allow-Origin",
+							"value": "*"
+						},
+						{
+							"key": "Content-Type",
+							"value": "application/json; charset=utf-8"
+						},
+						{
+							"key": "Content-Length",
+							"value": "353"
+						},
+						{
+							"key": "ETag",
+							"value": "W/\"161-KfqOl2IiyX6k1khEhtN7kllymZ4\""
+						},
+						{
+							"key": "Date",
+							"value": "Mon, 27 Oct 2025 20:22:58 GMT"
+						},
+						{
+							"key": "Connection",
+							"value": "keep-alive"
+						},
+						{
+							"key": "Keep-Alive",
+							"value": "timeout=5"
+						}
+					],
+					"cookie": [],
+					"body": "{\n    \"success\": true,\n    \"message\": \"User created successfully\",\n    \"data\": {\n        \"user\": {\n            \"id\": 3,\n            \"email\": \"chinmay@example.com\",\n            \"name\": \"John Doe\",\n            \"role\": \"USER\"\n        },\n        \"token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjMsImVtYWlsIjoiY2hpbm1heUBleGFtcGxlLmNvbSIsInJvbGUiOiJVU0VSIiwiaWF0IjoxNzYxNTk2NTc4LCJleHAiOjE3NjE2ODI5Nzh9.98kBh4K0FTttzEJPbFMhjk-pcnT2_-q2V4f26lTURcU\"\n    }\n}"
+				}
+			]
+		},
+		{
+			"name": "Maps and Search API",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsImVtYWlsIjoiYWRtaW5AZ21haWwuY29tIiwicm9sZSI6IkFETUlOIiwiaWF0IjoxNzYxNjk3Mjk4LCJleHAiOjE3NjE3ODM2OTh9.dtNC1KRy8rEalnzIjjOAyZ6YAFbqMARxOnKXMGx1wAg"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:3500/api/occupant-records/maps",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3500",
+					"path": [
+						"api",
+						"occupant-records",
+						"maps"
+					]
+				}
+			},
+			"response": [
+				{
+					"name": "New Request Copy",
+					"originalRequest": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsImVtYWlsIjoiYWRtaW5AZ21haWwuY29tIiwicm9sZSI6IkFETUlOIiwiaWF0IjoxNzYxNjk3Mjk4LCJleHAiOjE3NjE3ODM2OTh9.dtNC1KRy8rEalnzIjjOAyZ6YAFbqMARxOnKXMGx1wAg"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:3500/api/occupant-records/maps",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3500",
+							"path": [
+								"api",
+								"occupant-records",
+								"maps"
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": null,
+					"header": [
+						{
+							"key": "Content-Security-Policy",
+							"value": "default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests"
+						},
+						{
+							"key": "Cross-Origin-Opener-Policy",
+							"value": "same-origin"
+						},
+						{
+							"key": "Cross-Origin-Resource-Policy",
+							"value": "same-origin"
+						},
+						{
+							"key": "Origin-Agent-Cluster",
+							"value": "?1"
+						},
+						{
+							"key": "Referrer-Policy",
+							"value": "no-referrer"
+						},
+						{
+							"key": "Strict-Transport-Security",
+							"value": "max-age=15552000; includeSubDomains"
+						},
+						{
+							"key": "X-Content-Type-Options",
+							"value": "nosniff"
+						},
+						{
+							"key": "X-DNS-Prefetch-Control",
+							"value": "off"
+						},
+						{
+							"key": "X-Download-Options",
+							"value": "noopen"
+						},
+						{
+							"key": "X-Frame-Options",
+							"value": "SAMEORIGIN"
+						},
+						{
+							"key": "X-Permitted-Cross-Domain-Policies",
+							"value": "none"
+						},
+						{
+							"key": "X-XSS-Protection",
+							"value": "0"
+						},
+						{
+							"key": "Access-Control-Allow-Origin",
+							"value": "*"
+						},
+						{
+							"key": "Content-Type",
+							"value": "application/json; charset=utf-8"
+						},
+						{
+							"key": "Content-Length",
+							"value": "1928"
+						},
+						{
+							"key": "ETag",
+							"value": "W/\"788-Z6LmLsrICpndhkD6APA3huncl8c\""
+						},
+						{
+							"key": "Date",
+							"value": "Wed, 29 Oct 2025 20:31:25 GMT"
+						},
+						{
+							"key": "Connection",
+							"value": "keep-alive"
+						},
+						{
+							"key": "Keep-Alive",
+							"value": "timeout=5"
+						}
+					],
+					"cookie": [],
+					"body": "{\n    \"success\": true,\n    \"message\": \"Occupant records for maps retrieved successfully\",\n    \"data\": {\n        \"records\": [\n            {\n                \"developer_name\": \"Emaar Properties\",\n                \"property_name\": \"Dubai Marina Luxury Tower\",\n                \"price\": 2500000,\n                \"image_url\": null,\n                \"property_type\": \"OffPlan\",\n                \"location\": \"Dubai Marina\",\n                \"longitude\": 55.1413,\n                \"latitude\": 25.0772\n            },\n            {\n                \"developer_name\": \"Emaar Properties\",\n                \"property_name\": \"Dubai Marina Luxury Tower\",\n                \"price\": null,\n                \"image_url\": null,\n                \"property_type\": \"Rental\",\n                \"location\": \"Dubai Marina\",\n                \"longitude\": 55.1413,\n                \"latitude\": 25.0772\n            },\n            {\n                \"developer_name\": \"Emaar Properties\",\n                \"property_name\": \"Dubai Marina Tower\",\n                \"price\": 2500000,\n                \"image_url\": null,\n                \"property_type\": \"OffPlan\",\n                \"location\": \"Dubai Marina\",\n                \"longitude\": null,\n                \"latitude\": null\n            },\n            {\n                \"developer_name\": \"testing Properties\",\n                \"property_name\": \"Dubai Marina Luxury Tower\",\n                \"price\": 80000,\n                \"image_url\": null,\n                \"property_type\": \"OffPlan\",\n                \"location\": \"Dubai Marina\",\n                \"longitude\": 55.1413,\n                \"latitude\": 25.0772\n            },\n            {\n                \"developer_name\": \"Emaar Properties\",\n                \"property_name\": \"Dubai Marina Luxury Tower\",\n                \"price\": 80000,\n                \"image_url\": null,\n                \"property_type\": \"OffPlan\",\n                \"location\": \"Dubai Marina\",\n                \"longitude\": 55.1413,\n                \"latitude\": 25.0772\n            },\n            {\n                \"developer_name\": \"Emaar Properties\",\n                \"property_name\": \"Dubai Marina Luxury Tower\",\n                \"price\": 80000,\n                \"image_url\": null,\n                \"property_type\": \"Rental\",\n                \"location\": \"Dubai Marina\",\n                \"longitude\": 55.1413,\n                \"latitude\": 25.0772\n            },\n            {\n                \"developer_name\": \"Emaar Properties\",\n                \"property_name\": \"Dubai Marina Luxury Tower\",\n                \"price\": null,\n                \"image_url\": null,\n                \"property_type\": \"Rental\",\n                \"location\": \"Dubai Marina\",\n                \"longitude\": 55.1413,\n                \"latitude\": 25.0772\n            },\n            {\n                \"developer_name\": \"Emaar Properties\",\n                \"property_name\": \"Dubai Marina Luxury Tower\",\n                \"price\": null,\n                \"image_url\": null,\n                \"property_type\": \"Rental\",\n                \"location\": \"Dubai Marina\",\n                \"longitude\": 55.1413,\n                \"latitude\": 25.0772\n            },\n            {\n                \"developer_name\": \"Emaar Properties\",\n                \"property_name\": \"Dubai Marina Luxury Tower\",\n                \"price\": null,\n                \"image_url\": null,\n                \"property_type\": \"Rental\",\n                \"location\": \"Dubai Marina\",\n                \"longitude\": 55.1413,\n                \"latitude\": 25.0772\n            }\n        ],\n        \"total\": 9\n    }\n}"
+				}
+			]
+		}
+	]
+}

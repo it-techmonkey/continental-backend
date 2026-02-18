@@ -1,0 +1,342 @@
+================================================================================
+FLUTTER APP - GOOGLE PLAY STORE BUILD GUIDE
+================================================================================
+App: Continental (Property Management App)
+Package: com.continental.mobileapp
+Date: January 2026
+
+================================================================================
+STEP 1: PACKAGE NAME ISSUE
+================================================================================
+
+PROBLEM: Google Play Store rejected "com.example.continental" package name
+ERROR: "You need to use a different package name because 'com.example' is restricted"
+
+ACTIONS TAKEN:
+1. Changed package name from "com.example.continental" to "com.continental.mobileapp"
+
+2. Updated files:
+   - android/app/build.gradle.kts:
+     * namespace = "com.continental.mobileapp"
+     * applicationId = "com.continental.mobileapp"
+   
+   - android/app/src/main/kotlin/com/continental/mobileapp/MainActivity.kt:
+     * package com.continental.mobileapp
+   
+   - Moved MainActivity.kt to new directory structure:
+     * FROM: android/app/src/main/kotlin/com/example/continental/
+     * TO: android/app/src/main/kotlin/com/continental/mobileapp/
+
+3. Rebuilt the app:
+   - flutter clean
+   - flutter build appbundle --release
+   - flutter build apk --release
+
+RESULT: Successfully created app with valid package name
+
+KEY LEARNING: Never use "com.example" in production apps - use your company/app domain
+
+================================================================================
+STEP 2: KEYSTORE GENERATION & SIGNING CONFIGURATION
+================================================================================
+
+PROBLEM: Need to sign release builds for Play Store
+
+ACTIONS TAKEN:
+1. Generated release keystore:
+   keytool -genkey -v -keystore android/upload-keystore.jks \
+     -keyalg RSA -keysize 2048 -validity 10000 \
+     -alias upload \
+     -storepass [PASSWORD] \
+     -keypass [PASSWORD] \
+     -dname "CN=Continental, OU=Mobile, O=Torodo Group, L=City, S=State, C=US"
+
+2. Created android/key.properties:
+   storePassword=[PASSWORD]
+   keyPassword=[PASSWORD]
+   keyAlias=upload
+   storeFile=upload-keystore.jks
+
+3. Updated android/app/build.gradle.kts:
+   - Added imports:
+     import java.util.Properties
+     import java.io.FileInputStream
+   
+   - Loaded keystore properties:
+     val keystoreProperties = Properties()
+     val keystorePropertiesFile = rootProject.file("key.properties")
+     if (keystorePropertiesFile.exists()) {
+         keystoreProperties.load(FileInputStream(keystorePropertiesFile))
+     }
+   
+   - Added signing config:
+     signingConfigs {
+         create("release") {
+             keyAlias = keystoreProperties["keyAlias"] as String
+             keyPassword = keystoreProperties["keyPassword"] as String
+             storeFile = file(keystoreProperties["storeFile"] as String)
+             storePassword = keystoreProperties["storePassword"] as String
+         }
+     }
+   
+   - Updated release build type:
+     buildTypes {
+         release {
+             signingConfig = signingConfigs.getByName("release")
+             isMinifyEnabled = true
+             isShrinkResources = true
+         }
+     }
+
+RESULT: App properly signed for production release
+
+KEY LEARNING: BACKUP YOUR KEYSTORE! If you lose it, you can never update your app on Play Store
+
+================================================================================
+STEP 3: 16KB PAGE SIZE COMPATIBILITY
+================================================================================
+
+PROBLEM: Google Play requires apps to support 16KB page size for newer Android devices
+
+ACTIONS TAKEN:
+1. Updated NDK version in android/app/build.gradle.kts:
+   ndkVersion = "27.0.12077973"
+
+2. Created verification script (check_apk_detail.sh):
+   - Extracts APK
+   - Uses llvm-readelf to check .so file alignment
+   - Verifies all libraries are 16KB (0x4000) or 64KB (0x10000) aligned
+
+3. Ran verification:
+   ./check_apk_detail.sh
+
+RESULT: ✅ All 9 libraries passed 16KB alignment check
+
+KEY LEARNING: Always verify 16KB compatibility before uploading to Play Store
+
+================================================================================
+STEP 4: BUILD ARTIFACTS GENERATION
+================================================================================
+
+ACTIONS TAKEN:
+1. Built release App Bundle (for Play Store):
+   flutter build appbundle --release
+   OUTPUT: build/app/outputs/bundle/release/app-release.aab (48.1MB)
+
+2. Built release APK (for testing):
+   flutter build apk --release
+   OUTPUT: build/app/outputs/flutter-apk/app-release.apk (59.4MB)
+
+RESULT: Both artifacts built successfully
+
+KEY LEARNING: AAB is required for Play Store, APK is for local testing only
+
+================================================================================
+STEP 5: PLAY STORE ASSETS CREATION
+================================================================================
+
+A. APP ICON (512x512 PNG)
+--------------------------
+ACTIONS:
+1. Used existing high-res asset: temp_logo_opaque_final.png (1024x1024)
+2. Resized to 512x512:
+   sips --resampleHeightWidth 512 512 temp_logo_opaque_final.png --out play_store_icon.png
+3. Verified dimensions and format
+
+RESULT: play_store_icon.png (512x512, 61KB)
+
+B. FEATURE GRAPHIC (1024x500 PNG)
+----------------------------------
+ACTIONS:
+1. Generated AI image with professional design
+2. Processed to exact dimensions using Python/PIL
+3. Verified final output
+
+RESULT: feature_graphic.png (1024x500)
+
+C. TABLET SCREENSHOTS (1080x1920 PNG, 9:16 ratio)
+--------------------------------------------------
+ACTIONS:
+1. Received 5 phone screenshots from user
+2. Created Python script (make_tablet_screens.py) to:
+   - Resize phone screenshots
+   - Add blurred background to fit 9:16 ratio
+   - Export as PNG
+3. Generated 5 tablet screenshots
+
+RESULT: tablet_screenshot_1.png through tablet_screenshot_5.png
+
+D. PRIVACY POLICY
+-----------------
+ACTIONS:
+1. Created HTML privacy policy (privacy_policy.html)
+2. Included sections for:
+   - Data collection (personal info, property data, location)
+   - Third-party services (Google Maps)
+   - Data security
+   - Contact information
+
+RESULT: privacy_policy.html (needs to be hosted on a public URL)
+
+================================================================================
+STEP 6: PLAY STORE LISTING CONTENT
+================================================================================
+
+SHORT DESCRIPTION (80 chars):
+"Smart property portfolio management. Track payments, occupants, and maps easily."
+
+FULL DESCRIPTION:
+Manage your real estate portfolio with efficiency and precision using the Continental app. 
+Designed for property managers and agents, Continental provides a comprehensive suite of 
+tools to streamline your daily operations and improved decision making.
+
+Key Features:
+• 📈 Dashboard Overview
+• 🏘️ Portfolio Management
+• 📍 Interactive Maps
+• 💳 Payment Tracking
+• ✅ Actionable Items
+• 🌐 Multi-Language Support
+
+PERMISSION JUSTIFICATION (Photo/Video - under 250 chars):
+"Users need access to upload photos for property listings, update profile pictures, 
+and attach payment receipts for transaction management."
+
+================================================================================
+STEP 7: FINAL BUILD & VERIFICATION
+================================================================================
+
+ACTIONS TAKEN:
+1. Final clean build:
+   flutter clean
+   flutter build appbundle --release
+   flutter build apk --release
+
+2. Verified outputs:
+   - app-release.aab: 48.1MB ✓
+   - app-release.apk: 59.4MB ✓
+   - 16KB compatibility: PASSED ✓
+
+3. Prepared all assets:
+   - App icon: 512x512 ✓
+   - Feature graphic: 1024x500 ✓
+   - Tablet screenshots: 5 images ✓
+   - Privacy policy: HTML created ✓
+   - Store descriptions: Written ✓
+
+RESULT: Ready for Play Store upload
+
+================================================================================
+STEP 8: PLAY STORE UPLOAD CHECKLIST
+================================================================================
+
+BEFORE UPLOADING:
+☑ App Bundle (.aab) built and signed
+☑ Package name is NOT "com.example.*"
+☑ Version code and version name set correctly
+☑ Keystore backed up securely
+☑ 16KB page size compatibility verified
+☑ App icon (512x512) ready
+☑ Feature graphic (1024x500) ready
+☑ Screenshots ready (phone and/or tablet)
+☑ Privacy policy hosted on public URL
+☑ Store listing descriptions written
+☑ Permission justifications prepared
+
+UPLOAD PROCESS:
+1. Go to Google Play Console
+2. Create new app or select existing
+3. Upload app-release.aab to Production/Internal Testing
+4. Fill in store listing details
+5. Upload graphics and screenshots
+6. Add privacy policy URL
+7. Complete content rating questionnaire
+8. Declare permissions usage
+9. Submit for review
+
+================================================================================
+COMMON ISSUES & FIXES
+================================================================================
+
+ISSUE: "No space left on device"
+FIX: Clean caches (flutter clean, gradle clean, docker prune)
+
+ISSUE: "com.example is restricted"
+FIX: Change package name in build.gradle.kts and MainActivity.kt
+
+ISSUE: "Unresolved reference: util"
+FIX: Add imports in build.gradle.kts:
+     import java.util.Properties
+     import java.io.FileInputStream
+
+ISSUE: 16KB page size warning
+FIX: Update NDK to version 27.0.12077973 or higher
+
+ISSUE: Build fails after package name change
+FIX: Run flutter clean, then rebuild
+
+================================================================================
+IMPORTANT FILES TO BACKUP
+================================================================================
+
+CRITICAL (NEVER LOSE THESE):
+1. android/upload-keystore.jks - Your signing key
+2. android/key.properties - Keystore passwords
+
+IMPORTANT:
+3. android/app/build.gradle.kts - Build configuration
+4. pubspec.yaml - App version and dependencies
+5. privacy_policy.html - Privacy policy content
+
+================================================================================
+REPLICATION STEPS FOR ANOTHER FLUTTER APP
+================================================================================
+
+1. PREPARE ENVIRONMENT
+   - Ensure 5-10GB free disk space
+   - Install Flutter SDK
+   - Install Android SDK with NDK 27+
+
+2. CONFIGURE APP
+   - Choose unique package name (NOT com.example.*)
+   - Update android/app/build.gradle.kts with package name
+   - Update MainActivity.kt with package name
+   - Move MainActivity.kt to correct directory structure
+
+3. GENERATE KEYSTORE
+   - Run keytool command to create upload-keystore.jks
+   - Create key.properties with credentials
+   - BACKUP BOTH FILES IMMEDIATELY
+
+4. CONFIGURE SIGNING
+   - Add imports to build.gradle.kts
+   - Load keystore properties
+   - Create signing config
+   - Update release build type
+
+5. BUILD & VERIFY
+   - flutter clean
+   - flutter build appbundle --release
+   - flutter build apk --release
+   - Verify 16KB compatibility
+
+6. CREATE ASSETS
+   - App icon: 512x512 PNG
+   - Feature graphic: 1024x500 PNG
+   - Screenshots: Phone and/or tablet
+   - Privacy policy: HTML hosted publicly
+
+7. PREPARE STORE LISTING
+   - Write short description (80 chars)
+   - Write full description
+   - Prepare permission justifications
+
+8. UPLOAD TO PLAY STORE
+   - Upload AAB file
+   - Add all graphics
+   - Fill in all required fields
+   - Submit for review
+
+================================================================================
+END OF GUIDE
+================================================================================

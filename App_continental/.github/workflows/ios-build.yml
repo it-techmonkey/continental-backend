@@ -1,0 +1,50 @@
+name: Build iOS (macOS runner)
+
+on:
+  workflow_dispatch: {}
+  push:
+    branches: [ main ]
+
+jobs:
+  build-ios:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 'stable'
+
+      - name: Install Ruby (for CocoaPods)
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.2'
+
+      - name: Install CocoaPods
+        run: |
+          gem install cocoapods
+
+      - name: Flutter pub get
+        run: flutter pub get
+
+      - name: Install iOS pods
+        working-directory: ios
+        run: pod install --repo-update
+
+      - name: Build iOS (no codesign)
+        run: flutter build ios --no-codesign --release
+
+      - name: Build IPA (no codesign)
+        run: |
+          set -e
+          flutter build ipa --no-codesign || echo "flutter build ipa not available; continuing"
+
+      - name: Upload iOS build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-build-artifacts
+          path: |
+            build/ios/iphoneos
+            build/ios/ipa

@@ -1,0 +1,82 @@
+iOS BUILD GUIDE - Testing on Friend's iPhone
+============================================
+
+PREREQUISITES:
+1. Friend's iPhone UDID
+2. Free Apple ID account (get at appleid.apple.com)
+3. Xcode installed on your Mac
+
+STEP 1: Get Friend's iPhone UDID
+---------------------------------
+Method A: On their iPhone
+- Settings > General > About > Find UUID
+
+Method B: Online (Easy!)
+- Send this link to your friend:
+  https://udid.tech
+- They click "Get UDID" and share the code
+
+Method C: iTunes/Finder (if they come to you)
+- Connect iPhone to Mac
+- Open Finder > Select their iPhone
+- Click "Serial Number" (changes to UDID)
+
+STEP 2: Update Bundle Identifier
+---------------------------------
+1. Open ios/Runner.xcodeproj in Xcode
+2. Select "Runner" project
+3. Under "TARGETS" > Runner > General
+4. Change Bundle Identifier to something unique like:
+   com.yourname.continental (replace yourname)
+5. Save the project
+
+STEP 3: Add Device to Your Apple ID
+------------------------------------
+1. Open Xcode
+2. Preferences (Cmd + ,) > Accounts tab
+3. Click "+" to add your Apple ID (if not added)
+4. Select your Apple ID > Click "Manage Certificates"
+5. Window > Devices and Simulators (Cmd + Shift + 2)
+6. Click "+" > Enter device name and UDID
+7. Select your Apple ID team
+8. Done
+
+STEP 4: Build the IPA
+----------------------
+In Terminal, run these commands:
+
+cd /Users/manmohan/Desktop/chinmap/continental-app/App_continental
+flutter build ipa --release
+
+This creates: build/ios/ipa/continental.ipa
+
+STEP 5: TestFlight (Best Option!)
+----------------------------------
+1. Create Apple Developer Account (FREE at developer.apple.com)
+2. Go to App Store Connect
+3. Create new app
+4. Upload the IPA via Xcode or Transporter app
+5. Add your friend to TestFlight
+6. They download TestFlight app and test!
+
+ALTERNATIVE: Direct Install (If same location)
+----------------------------------------------
+1. Send the IPA file to friend
+2. They install via AirDrop, Email, or file sharing
+3. Must trust developer profile on their iPhone
+   Settings > General > VPN & Device Management > Trust
+
+IMPORTANT NOTES:
+----------------
+- Free Apple ID allows testing on 10 devices max
+- Ad-hoc builds expire in 90 days
+- UDID must be registered before building
+- iOS apps must be signed to install on real devices
+
+TROUBLESHOOTING:
+----------------
+Error: "No valid code signing certificates"
+Solution: Open Xcode > Preferences > Accounts > Download Manual Profiles
+
+Error: "Developer mode disabled"
+Solution: Settings > Privacy & Security > Developer Mode > Enable

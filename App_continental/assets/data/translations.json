@@ -1,0 +1,411 @@
+{
+  "All": {
+    "en": "All",
+    "fr": "Tout"
+  },
+  "Rental": {
+    "en": "Rental",
+    "fr": "Location"
+  },
+  "Off Plan": {
+    "en": "Off Plan",
+    "fr": "Hors plan"
+  },
+  "Search for Properties": {
+    "en": "Search for Properties",
+    "fr": "Rechercher des propriétés"
+  },
+  "A Product By Torodo Group": {
+    "en": "A Product By Torodo Group!",
+    "fr": "Un produit du groupe Torodo"
+  },
+  "Total Properties Rented": {
+    "en": "Total Properties Rented",
+    "fr": "Total des propriétés louées"
+  },
+  "Total Off plan Properties Rented": {
+    "en": "Total Off plan Properties Rented",
+    "fr": "Total des propriétés sur plan louées"
+  },
+  "Rentals Due": {
+    "en": "Rentals Due",
+    "fr": "Locations dues"
+  },
+  "Rental Amount Due": {
+    "en": "Rental Amount Due",
+    "fr": "Montant de location dû"
+  },
+  "Total Off Plan Properties": {
+    "en": "Total Off Plan Properties",
+    "fr": "Total des propriétés hors plan"
+  },
+  "Portfolio": {
+    "en": "Portfolio",
+    "fr": "Portefeuille"
+  },
+  "Add": {
+    "en": "Add",
+    "fr": "Ajouter"
+  },
+  "Name": {
+    "en": "Name",
+    "fr": "Nom"
+  },
+  "Amount Due": {
+    "en": "Amount Due",
+    "fr": "Montant dû"
+  },
+  "Total Amount Due": {
+    "en": "Total Amount Due",
+    "fr": "Montant total dû"
+  },
+  "Upcoming EMI": {
+    "en": "Upcoming EMI",
+    "fr": "EMI à venir"
+  },
+  "Paid": {
+    "en": "Paid",
+    "fr": "Payé"
+  },
+  "Search For Tenants, Properties": {
+    "en": "Search For Tenants, Properties",
+    "fr": "Recherche de locataires et de propriétés"
+  },
+  "Vacant Properties": {
+    "en": "Vacant Properties",
+    "fr": "Propriétés vacantes"
+  },
+  "Payment Summary": {
+    "en": "Payment Summary",
+    "fr": "Résumé du paiement"
+  },
+  "Amount Paid": {
+    "en": "Amount Paid",
+    "fr": "Montant payé"
+  },
+  "Amount Pending": {
+    "en": "Amount Pending",
+    "fr": "Montant en attente"
+  },
+  "Due": {
+    "en": "Due",
+    "fr": "À payer"
+  },
+  "Payment Timeline": {
+    "en": "Payment Timeline",
+    "fr": "Échéancier de paiement"
+  },
+  "Mark as Paid": {
+    "en": "Mark as Paid",
+    "fr": "Marquer comme payé"
+  },
+  "Call the Tenant": {
+    "en": "Call the Tenant",
+    "fr": "Appeler le locataire"
+  },
+  "Details": {
+    "en": "Details",
+    "fr": "Détails"
+  },
+  "ROI": {
+    "en": "ROI",
+    "fr": "ROI (Rendement)"
+  },
+  "Years": {
+    "en": "Years",
+    "fr": "Années"
+  },
+  "Rental Details": {
+    "en": "Rental Details",
+    "fr": "Détails de location"
+  },
+  "Tenant Name": {
+    "en": "Tenant Name",
+    "fr": "Nom du locataire"
+  },
+  "Installments Due": {
+    "en": "Installments Due",
+    "fr": "Versements dus"
+  },
+  "Property Type": {
+    "en": "Property Type",
+    "fr": "Type de propriété"
+  },
+  "Agreement": {
+    "en": "Agreement",
+    "fr": "Contrat"
+  },
+  "Rental Agreement": {
+    "en": "Rental Agreement",
+    "fr": "Contrat de location"
+  },
+  "Dashboard": {
+    "en": "Dashboard",
+    "fr": "Tableau de bord"
+  },
+  "DashBoard": {
+    "en": "DashBoard",
+    "fr": "Tableau de bord"
+  },
+  "Potfolio": {
+    "en": "Potfolio",
+    "fr": "Portefeuille"
+  },
+  "Profile": {
+    "en": "Profile",
+    "fr": "Profil"
+  },
+  "Properties": {
+    "en": "Properties",
+    "fr": "Propriétés"
+  },
+  "Menu": {
+    "en": "Menu",
+    "fr": "Menu"
+  },
+  "Help": {
+    "en": "Help",
+    "fr": "Aide"
+  },
+  "Language Settings": {
+    "en": "Language Settings",
+    "fr": "Paramètres de langue"
+  },
+  "Payments": {
+    "en": "Payments",
+    "fr": "Paiements"
+  },
+  "Log Out": {
+    "en": "Log Out",
+    "fr": "Déconnexion"
+  },
+  "Edit Profile": {
+    "en": "Edit Profile",
+    "fr": "Modifier le profil"
+  },
+  "Admin": {
+    "en": "Admin",
+    "fr": "Admin"
+  },
+  "Charges": {
+    "en": "Charges",
+    "fr": "Frais"
+  },
+  "DLD": {
+    "en": "DLD",
+    "fr": "DLD"
+  },
+  "QUOOD": {
+    "en": "QUOOD",
+    "fr": "QUOOD"
+  },
+  "Other Charges": {
+    "en": "Other Charges",
+    "fr": "Autres frais"
+  },
+  "Penalties": {
+    "en": "Penalties",
+    "fr": "Pénalités"
+  },
+  "Over Due": {
+    "en": "Over Due",
+    "fr": "En retard"
+  },
+  "No properties found": {
+    "en": "No properties found",
+    "fr": "Aucune propriété trouvée"
+  },
+  "Property Name": {
+    "en": "Property Name",
+    "fr": "Nom de la propriété"
+  },
+  "Developer Name": {
+    "en": "Developer Name",
+    "fr": "Nom du promoteur"
+  },
+  "Market": {
+    "en": "Market",
+    "fr": "Marché"
+  },
+  "No of Bedrooms": {
+    "en": "No of Bedrooms",
+    "fr": "Nombre de chambres"
+  },
+  "No of Bathrooms": {
+    "en": "No of Bathrooms",
+    "fr": "Nombre de salles de bain"
+  },
+  "Furnishing": {
+    "en": "Furnishing",
+    "fr": "Meublé"
+  },
+  "City": {
+    "en": "City",
+    "fr": "Ville"
+  },
+  "Location": {
+    "en": "Location",
+    "fr": "Emplacement"
+  },
+  "Locality": {
+    "en": "Locality",
+    "fr": "Localité"
+  },
+  "Views From Property": {
+    "en": "Views From Property",
+    "fr": "Vues depuis la propriété"
+  },
+  "Amenities": {
+    "en": "Amenities",
+    "fr": "Équipements"
+  },
+  "Email Id": {
+    "en": "Email Id",
+    "fr": "Identifiant e-mail"
+  },
+  "Phone No": {
+    "en": "Phone No",
+    "fr": "Numéro de téléphone"
+  },
+  "Rent": {
+    "en": "Rent",
+    "fr": "Loyer"
+  },
+  "Rent Frequency": {
+    "en": "Rent Frequency",
+    "fr": "Fréquence du loyer"
+  },
+  "Payment Count": {
+    "en": "Payment Count",
+    "fr": "Nombre de paiements"
+  },
+  "Price": {
+    "en": "Price",
+    "fr": "Prix"
+  },
+  "Handover": {
+    "en": "Handover",
+    "fr": "Livraison"
+  },
+  "Property Details": {
+    "en": "Property Details",
+    "fr": "Détails de la propriété"
+  },
+  "Property Images": {
+    "en": "Property Images",
+    "fr": "Images de la propriété"
+  },
+  "Tenant Details": {
+    "en": "Tenant Details",
+    "fr": "Détails du locataire"
+  },
+  "Owner Details": {
+    "en": "Owner Details",
+    "fr": "Détails du propriétaire"
+  },
+  "Enter": {
+    "en": "Enter",
+    "fr": "Entrer"
+  },
+  "Select": {
+    "en": "Select",
+    "fr": "Sélectionner"
+  },
+  "Hand Over": {
+    "en": "Hand Over",
+    "fr": "Livraison"
+  },
+  "Property Image": {
+    "en": "Property Image",
+    "fr": "Image de la propriété"
+  },
+  "cannot be empty": {
+    "en": "cannot be empty",
+    "fr": "ne peut pas être vide"
+  },
+  "Please make a selection": {
+    "en": "Please make a selection.",
+    "fr": "Veuillez faire une sélection."
+  },
+  "Please enter a valid email": {
+    "en": "Please enter a valid email.",
+    "fr": "Veuillez entrer un e-mail valide."
+  },
+  "Email cannot be empty": {
+    "en": "Email cannot be empty.",
+    "fr": "L'e-mail ne peut pas être vide."
+  },
+  "Mark as Paid / Edit Payment": {
+    "en": "Mark as Paid / Edit Payment",
+    "fr": "Marquer comme payé / Modifier le paiement"
+  },
+  "View": {
+    "en": "View",
+    "fr": "Voir"
+  },
+  "Failed to mark payment as paid": {
+    "en": "Failed to mark payment as paid",
+    "fr": "Échec du marquage du paiement comme payé"
+  },
+  "Edit": {
+    "en": "Edit",
+    "fr": "Modifier"
+  },
+  "Enter amount": {
+    "en": "Enter amount",
+    "fr": "Entrer le montant"
+  },
+  "Cancel": {
+    "en": "Cancel",
+    "fr": "Annuler"
+  },
+  "Save": {
+    "en": "Save",
+    "fr": "Enregistrer"
+  },
+  "Charges updated successfully": {
+    "en": "Charges updated successfully",
+    "fr": "Frais mis à jour avec succès"
+  },
+  "Failed to update charges": {
+    "en": "Failed to update charges",
+    "fr": "Échec de la mise à jour des frais"
+  },
+  "Unable to make phone call": {
+    "en": "Unable to make phone call",
+    "fr": "Impossible de passer un appel téléphonique"
+  },
+  "Unable to open file": {
+    "en": "Unable to open file",
+    "fr": "Impossible d'ouvrir le fichier"
+  },
+  "Downloading file...": {
+    "en": "Downloading file...",
+    "fr": "Téléchargement du fichier..."
+  },
+  "Error opening file: ": {
+    "en": "Error opening file: ",
+    "fr": "Erreur lors de l'ouverture du fichier : "
+  },
+  "Please enter a valid number": {
+    "en": "Please enter a valid number",
+    "fr": "Veuillez entrer un nombre valide"
+  },
+  "Search": {
+    "en": "Search",
+    "fr": "Rechercher"
+  },
+  "No results found": {
+    "en": "No results found",
+    "fr": "Aucun résultat trouvé"
+  },
+  "Offplan Details": {
+    "en": "Offplan Details",
+    "fr": "Détails hors plan"
+  },
+  "Total Price": {
+    "en": "Total Price",
+    "fr": "Prix total"
+  }
+}
+

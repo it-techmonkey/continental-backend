@@ -1,0 +1,27 @@
+📱 HOW TO GET YOUR iPHONE UDID
+
+Send this to your friend to easily get their UDID:
+
+═══════════════════════════════════════
+
+Hey! I need to add your iPhone to test the app.
+
+Easy way to get your UDID:
+
+1. Open Safari on your iPhone
+2. Go to: https://udid.tech
+3. Tap "Tap to find UDID" 
+4. Install the profile (Apple's official way)
+5. Settings > General > Profile > Install the profile
+6. Your UDID will be shown on screen
+7. Copy and send it to me!
+
+OR
+
+Go to: Settings > General > About
+Scroll down to find "UUID"
+Copy the long code and send it to me
+
+That's it! Takes 1 minute.
+
+═══════════════════════════════════════
