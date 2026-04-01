@@ -206,6 +206,42 @@ npm start
 
 The server runs on `http://localhost:3500` by default. You can change the port by setting the `PORT` environment variable.
 
+## Deploy on Render
+
+This repo now includes `render.yaml` in `backend/` for one-click Render Blueprint deploy.
+
+### Option A: Blueprint deploy (recommended)
+
+1. Push your repo to GitHub.
+2. In Render, click **New +** -> **Blueprint**.
+3. Select the repository and branch.
+4. Render reads `backend/render.yaml` and creates:
+   - a web service `continental-backend`
+   - a Postgres database `continental-postgres`
+5. After first deploy, open the service **Shell** and run:
+   - `npx prisma migrate deploy`
+   - `npm run db:seed` (optional, if you want demo users/data)
+
+### Option B: Manual service setup
+
+- Root Directory: `backend`
+- Build Command: `npm install && npm run db:generate && npm run build`
+- Start Command: `npm start`
+- Health Check Path: `/health`
+
+Set these env vars:
+- `NODE_ENV=production`
+- `DATABASE_URL=<Render Postgres connection string>`
+- `JWT_SECRET=<strong random value>`
+- `JWT_EXPIRES_IN=7d`
+- `AWS_REGION`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_BUCKET_NAME` (if uploads are used)
+
+### Environment files
+
+- Copy `.env.example` to `.env` for local development:
+  - `cp .env.example .env`
+- Never commit real secrets in `.env`.
+
 ## Database Setup
 
 1. Install PostgreSQL on your system

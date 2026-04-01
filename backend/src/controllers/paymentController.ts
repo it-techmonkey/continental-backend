@@ -24,7 +24,7 @@ export class PaymentController {
             const validStatusValues = ['due', 'paid', 'overdue'];
             const validPaymentModeValues = ['online', 'cash', 'cheque'];
 
-            if (status && !validStatusValues.includes(status)) {
+            if₹ (status && !validStatusValues.includes(status)) {
                 res.status(400).json({
                     success: false,
                     message: `Invalid status value. Must be one of: ${validStatusValues.join(', ')}`,
