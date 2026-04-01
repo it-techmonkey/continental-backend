@@ -3,7 +3,6 @@ import cors from 'cors';
 import helmet from 'helmet';
 import dotenv from 'dotenv';
 import { prisma } from './lib/prisma';
-import bcrypt from 'bcryptjs';
 import authRoutes from './routes/authRoutes';
 import leadRoutes from './routes/leadRoutes';
 import occupantRecordRoutes from './routes/occupantRecordRoutes';
@@ -115,51 +114,28 @@ app.use('*', (req: Request, res: Response) => {
     });
 });
 
-// Ensure demo account exists on every startup (critical for App Store review)
-async function ensureDemoAccount() {
-    const DEMO_EMAIL = 'admin@continental.com';
-    const DEMO_PASSWORD = 'admin@123';
-
-    try {
-        const hashedPassword = await bcrypt.hash(DEMO_PASSWORD, 10);
-        await prisma.user.upsert({
-            where: { email: DEMO_EMAIL },
-            update: { password: hashedPassword },
-            create: {
-                email: DEMO_EMAIL,
-                name: 'Demo Admin',
-                password: hashedPassword,
-                role: 'ADMIN',
-            },
-        });
-        console.log(`✅ Demo account ensured: ${DEMO_EMAIL}`);
-    } catch (error) {
-        console.error('⚠️ Failed to ensure demo account:', error);
-    }
-}
-
 // Start server
-ensureDemoAccount().then(() => {
-    const server = app.listen(PORT, () => {
-        console.log(`🚀 Server is running on port ${PORT}`);
-    });
+const server = app.listen(PORT, () => {
+    console.log(`🚀 Server is running on port ${PORT}`);
+    // console.log(`📊 Health check: http://localhost:${PORT}/health`);
+    // console.log(`🔗 API endpoint: http://localhost:${PORT}/api`);
+});
 
-    // Graceful shutdown
-    process.on('SIGTERM', async () => {
-        console.log('SIGTERM received, shutting down gracefully');
-        server.close(() => {
-            console.log('Process terminated');
-        });
-        await prisma.$disconnect();
+// Graceful shutdown
+process.on('SIGTERM', async () => {
+    console.log('SIGTERM received, shutting down gracefully');
+    server.close(() => {
+        console.log('Process terminated');
     });
+    await prisma.$disconnect();
+});
 
-    process.on('SIGINT', async () => {
-        console.log('SIGINT received, shutting down gracefully');
-        server.close(() => {
-            console.log('Process terminated');
-        });
-        await prisma.$disconnect();
+process.on('SIGINT', async () => {
+    console.log('SIGINT received, shutting down gracefully');
+    server.close(() => {
+        console.log('Process terminated');
     });
+    await prisma.$disconnect();
 });
 
 export default app;

@@ -16,13 +16,11 @@ async function main() {
     console.log('👤 Creating users...');
     const admin1 = await prisma.user.upsert({
         where: { email: 'admin@continental.com' },
-        update: {
-            password: await bcrypt.hash('admin@123', 10),
-        },
+        update: {},
         create: {
             email: 'admin@continental.com',
             name: 'Ahmed Al-Mansouri',
-            password: await bcrypt.hash('admin@123', 10),
+            password: await bcrypt.hash('admin123', 10),
             role: 'ADMIN',
         },
     });
@@ -195,14 +193,14 @@ async function main() {
                         status: 'paid' as const,
                         payment_date: new Date('2024-02-01'),
                         payment_proof: 'receipt_q1_2024.pdf',
-                        mode_of_payment: 'cash' as const,
+                        mode_of_payment: 'offline' as const,
                     },
                     {
                         rent: 84000,
                         status: 'paid' as const,
                         payment_date: new Date('2024-05-01'),
                         payment_proof: 'receipt_q2_2024.pdf',
-                        mode_of_payment: 'cash' as const,
+                        mode_of_payment: 'offline' as const,
                     },
                     {
                         rent: 84000,
@@ -391,7 +389,7 @@ async function main() {
                         status: 'paid' as const,
                         payment_date: new Date('2024-04-15'),
                         payment_proof: 'emi_apr_2024.pdf',
-                        mode_of_payment: 'cash' as const,
+                        mode_of_payment: 'offline' as const,
                     },
                     {
                         emi: 18500,
@@ -448,7 +446,7 @@ async function main() {
                         status: 'paid' as const,
                         payment_date: new Date('2023-12-10'),
                         payment_proof: 'emi_dec_2023.pdf',
-                        mode_of_payment: 'cash' as const,
+                        mode_of_payment: 'offline' as const,
                     },
                     {
                         emi: 42000,
@@ -476,7 +474,7 @@ async function main() {
                         status: 'paid' as const,
                         payment_date: new Date('2024-04-10'),
                         payment_proof: 'emi_apr_2024.pdf',
-                        mode_of_payment: 'cash' as const,
+                        mode_of_payment: 'offline' as const,
                     },
                     {
                         emi: 42000,
@@ -575,7 +573,7 @@ async function main() {
     console.log(`   - Rental Occupant Records: ${rentalRecords.length}`);
     console.log(`   - OffPlan Occupant Records: ${offplanRecords.length}`);
     console.log('\n🔑 Login Credentials:');
-    console.log('   Admin: admin@continental.com / admin@123');
+    console.log('   Admin: admin@continental.com / admin123');
     console.log('   Manager: sarah.manager@continental.com / manager123');
     console.log('   User: mohammed.ali@example.com / user123');
 }
