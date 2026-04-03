@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart';
 import 'package:intl/intl.dart';
 import 'package:continental/config/api_config.dart';
@@ -143,7 +144,12 @@ class OccupantDetailDto {
 }
 
 class OccupantsService {
-  final Dio _dio = Dio(BaseOptions(baseUrl: ApiConfig.baseUrl));
+  final Dio _dio = Dio(BaseOptions(
+    baseUrl: ApiConfig.baseUrl,
+    connectTimeout: const Duration(seconds: 60),
+    receiveTimeout: const Duration(seconds: 60),
+    sendTimeout: const Duration(seconds: 30),
+  ));
   final TokenStorage _tokenStorage = TokenStorage();
 
   Future<OccupantDetailDto?> fetchOccupantDetail(int id) async {
@@ -180,11 +186,11 @@ class OccupantsService {
 
       // If no fields to update, return false
       if (data.isEmpty) {
-        print('⚠️ [UPDATE_CHARGES] No fields to update');
+        debugPrint('⚠️ [UPDATE_CHARGES] No fields to update');
         return false;
       }
 
-      print('📤 [UPDATE_CHARGES] Updating charges for ID $id: $data');
+      debugPrint('📤 [UPDATE_CHARGES] Updating charges for ID $id: $data');
 
       final response = await _dio.put(
         '/occupant-records/$id',
@@ -192,20 +198,20 @@ class OccupantsService {
         options: Options(headers: headers),
       );
 
-      print('✅ [UPDATE_CHARGES] Response status: ${response.statusCode}');
-      print('📦 [UPDATE_CHARGES] Response data: ${response.data}');
+      debugPrint('✅ [UPDATE_CHARGES] Response status: ${response.statusCode}');
+      debugPrint('📦 [UPDATE_CHARGES] Response data: ${response.data}');
 
       if (response.statusCode == 200 && response.data['success'] == true) {
         // Verify the updated values in response
         final updatedData = response.data['data'];
         if (updatedData != null) {
-          print('📊 [UPDATE_CHARGES] Updated values: dld=${updatedData['dld']}, quood=${updatedData['quood']}, other_charges=${updatedData['other_charges']}, penalties=${updatedData['penalties']}');
+          debugPrint('📊 [UPDATE_CHARGES] Updated values: dld=${updatedData['dld']}, quood=${updatedData['quood']}, other_charges=${updatedData['other_charges']}, penalties=${updatedData['penalties']}');
         }
         return true;
       }
       return false;
     } catch (e) {
-      print('❌ [UPDATE_CHARGES] Error: $e');
+      debugPrint('❌ [UPDATE_CHARGES] Error: $e');
       return false;
     }
   }
@@ -215,7 +221,7 @@ class OccupantsService {
       final token = await _tokenStorage.getToken();
       final headers = ApiConfig.getAuthHeaders(token);
 
-      print('📤 [UPDATE_PROPERTY] Updating property ID $id with data: $data');
+      debugPrint('📤 [UPDATE_PROPERTY] Updating property ID $id with data: $data');
 
       final response = await _dio.put(
         '/occupant-records/$id',
@@ -223,12 +229,12 @@ class OccupantsService {
         options: Options(headers: headers),
       );
 
-      print('✅ [UPDATE_PROPERTY] Response status: ${response.statusCode}');
-      print('📦 [UPDATE_PROPERTY] Response data: ${response.data}');
+      debugPrint('✅ [UPDATE_PROPERTY] Response status: ${response.statusCode}');
+      debugPrint('📦 [UPDATE_PROPERTY] Response data: ${response.data}');
 
       return response.statusCode == 200 && response.data['success'] == true;
     } catch (e) {
-      print('❌ [UPDATE_PROPERTY] Error: $e');
+      debugPrint('❌ [UPDATE_PROPERTY] Error: $e');
       return false;
     }
   }
@@ -238,19 +244,19 @@ class OccupantsService {
       final token = await _tokenStorage.getToken();
       final headers = ApiConfig.getAuthHeaders(token);
 
-      print('📤 [DELETE_PROPERTY] Deleting property ID $id');
+      debugPrint('📤 [DELETE_PROPERTY] Deleting property ID $id');
 
       final response = await _dio.delete(
         '/occupant-records/$id',
         options: Options(headers: headers),
       );
 
-      print('✅ [DELETE_PROPERTY] Response status: ${response.statusCode}');
-      print('📦 [DELETE_PROPERTY] Response data: ${response.data}');
+      debugPrint('✅ [DELETE_PROPERTY] Response status: ${response.statusCode}');
+      debugPrint('📦 [DELETE_PROPERTY] Response data: ${response.data}');
 
       return response.statusCode == 200 && response.data['success'] == true;
     } catch (e) {
-      print('❌ [DELETE_PROPERTY] Error: $e');
+      debugPrint('❌ [DELETE_PROPERTY] Error: $e');
       return false;
     }
   }
@@ -280,7 +286,7 @@ class OccupantsService {
       }
       return [];
     } catch (e) {
-      print('❌ [FETCH_ALL_OCCUPANTS] Error: $e');
+      debugPrint('❌ [FETCH_ALL_OCCUPANTS] Error: $e');
       return [];
     }
   }

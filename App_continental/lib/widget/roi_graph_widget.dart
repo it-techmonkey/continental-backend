@@ -13,20 +13,21 @@ class ROIGraphWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    print('📈 [ROI] Checking graph for locality: $locality');
+    debugPrint('📈 [ROI] Checking graph for locality: $locality');
     if (locality == null) {
-      print('📈 [ROI] Missing data - locality: $locality');
+      debugPrint('📈 [ROI] Missing data - locality: $locality');
       return const SizedBox(); // Return empty if no locality
     }
 
     final roiData = PropertyROIData.getROIDataForLocality(locality!);
     if (roiData == null || roiData.isEmpty) {
-      print('📈 [ROI] No ROI data found for locality: $locality');
+      debugPrint('📈 [ROI] No ROI data found for locality: $locality');
       return const SizedBox(); // Return empty if no data
     }
-    print('📈 [ROI] Found ${roiData.length} ROI data points');
+    debugPrint('📈 [ROI] Found ${roiData.length} ROI data points');
 
-    final currentROI = PropertyROIData.getCurrentROIForLocality(locality!) ?? 0.0;
+    // currentROI available if needed for future display
+    // final currentROI = PropertyROIData.getCurrentROIForLocality(locality!);
 
     // Filter for years 1, 3, and 5 (indices 0, 2, 4)
     final List<int> desiredYearsIndices = [0, 2, 4];
@@ -36,7 +37,7 @@ class ROIGraphWidget extends StatelessWidget {
         .toList();
 
     if (filteredData.isEmpty) {
-      print('📈 [ROI] No data points for years 1, 3, 5 for locality: $locality');
+      debugPrint('📈 [ROI] No data points for years 1, 3, 5 for locality: $locality');
       return const SizedBox();
     }
 
@@ -185,7 +186,7 @@ class ROIGraphWidget extends StatelessWidget {
                     ),
                     belowBarData: BarAreaData(
                       show: true,
-                      color: Colors.greenAccent.withOpacity(0.1),
+                      color: Colors.greenAccent.withValues(alpha: 0.1),
                     ),
                   ),
                 ],

@@ -2,10 +2,11 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
-import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../providers/auth_state_provider.dart';
 import '../../providers/language_provider.dart';
+import '../../services/auth_service.dart';
 import '../../services/language_service.dart';
 import '../../storage/token_storage.dart';
 
@@ -19,19 +20,35 @@ class SplashScreen extends ConsumerStatefulWidget {
 class _SplashScreenState extends ConsumerState<SplashScreen> {
   bool _hasNavigated = false;
   Timer? _safetyTimer;
+  ProviderSubscription<AuthState>? _authSubscription;
 
   @override
   void initState() {
     super.initState();
 
+    // Fire-and-forget: wake up the backend during splash
+    // so Render cold-start completes before user reaches login
+    AuthService.warmUpServer();
+
     // Safety net: if auth takes more than 5 seconds for any reason,
-    // force navigate to login so the app never gets permanently stuck.
+    // force navigate so the app never gets permanently stuck.
     _safetyTimer = Timer(const Duration(seconds: 5), () {
       _navigate(ref.read(authStateProvider));
     });
 
-    // If auth is already done by the time the widget builds, navigate immediately.
+    // Subscribe to auth state changes once (not on every rebuild).
+    // The moment isLoading flips to false, _navigate is called.
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      _authSubscription = ref.listenManual<AuthState>(authStateProvider, (
+        previous,
+        next,
+      ) {
+        if (!next.isLoading) {
+          _navigate(next);
+        }
+      });
+
+      // If auth is already resolved by the time the widget builds, navigate immediately.
       final authState = ref.read(authStateProvider);
       if (!authState.isLoading) {
         _navigate(authState);
@@ -42,6 +59,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
   @override
   void dispose() {
     _safetyTimer?.cancel();
+    _authSubscription?.close();
     super.dispose();
   }
 
@@ -51,6 +69,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
     _hasNavigated = true;
 
     _safetyTimer?.cancel();
+    _authSubscription?.close();
 
     // Remove the native splash right before we navigate away.
     FlutterNativeSplash.remove();
@@ -72,15 +91,8 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
   @override
   Widget build(BuildContext context) {
     final languageCode = ref.watch(languageProvider);
-    final translate = (String key) => LanguageService.translate(key, languageCode);
-
-    // Listen to auth state changes. The moment isLoading flips to false,
-    // _navigate is called — no blind delays needed.
-    ref.listen<AuthState>(authStateProvider, (previous, next) {
-      if (!next.isLoading) {
-        _navigate(next);
-      }
-    });
+    final translate = (String key) =>
+        LanguageService.translate(key, languageCode);
 
     return Scaffold(
       backgroundColor: Colors.black,
@@ -93,9 +105,24 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
             children: [
               const Spacer(),
               Center(
-                child: Image.asset(
-                  'assets/images/splash.png',
-                  height: 400,
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final size = MediaQuery.of(context).size;
+                    final isTablet = size.shortestSide >= 600;
+                    final logoWidth = isTablet
+                        ? size.width * 0.35
+                        : size.width * 0.45;
+                    return ConstrainedBox(
+                      constraints: BoxConstraints(
+                        maxWidth: logoWidth.clamp(120.0, 220.0),
+                        maxHeight: size.height * 0.25,
+                      ),
+                      child: Image.asset(
+                        'assets/images/splash.png',
+                        fit: BoxFit.contain,
+                      ),
+                    );
+                  },
                 ),
               ),
               const Spacer(),
@@ -106,7 +133,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
                     translate('A Product By Torodo Group'),
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      color: Colors.white.withOpacity(0.7),
+                      color: Colors.white.withValues(alpha: 0.7),
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
                     ),

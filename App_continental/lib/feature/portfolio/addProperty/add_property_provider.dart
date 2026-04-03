@@ -82,10 +82,10 @@ class AddPropertyRepository {
   final TokenStorage _tokenStorage = TokenStorage();
 
   Future<bool> saveProperty(NewProperty property) async {
-    print("Saving ${property.mode.name} property: ${property.propertyName}...");
+    debugPrint("Saving ${property.mode.name} property: ${property.propertyName}...");
 
     final body = _buildRequestBody(property);
-    print('[ADD_PROPERTY] Request body => ' + body.toString());
+    debugPrint('[ADD_PROPERTY] Request body => $body');
     try {
       final token = await _tokenStorage.getToken();
       final headers = ApiConfig.getAuthHeaders(token);
@@ -95,23 +95,23 @@ class AddPropertyRepository {
         options: Options(headers: headers),
       );
       final ok = response.statusCode == 200 || response.statusCode == 201;
-      if (ok) print("Property saved successfully!");
+      if (ok) debugPrint("Property saved successfully!");
       return ok;
     } on DioException catch (e) {
-      print('[ADD_PROPERTY] Error status: ${e.response?.statusCode}');
-      print('[ADD_PROPERTY] Error data: ${e.response?.data}');
+      debugPrint('[ADD_PROPERTY] Error status: ${e.response?.statusCode}');
+      debugPrint('[ADD_PROPERTY] Error data: ${e.response?.data}');
       rethrow;
     } catch (e) {
-      print('[ADD_PROPERTY] Unexpected error: $e');
+      debugPrint('[ADD_PROPERTY] Unexpected error: $e');
       rethrow;
     }
   }
 
   Future<bool> updateProperty(int id, NewProperty property) async {
-    print("Updating ${property.mode.name} property: ${property.propertyName} (ID: $id)...");
+    debugPrint("Updating ${property.mode.name} property: ${property.propertyName} (ID: $id)...");
 
     final body = _buildRequestBody(property);
-    print('[UPDATE_PROPERTY] Request body => ' + body.toString());
+    debugPrint('[UPDATE_PROPERTY] Request body => $body');
     try {
       final token = await _tokenStorage.getToken();
       final headers = ApiConfig.getAuthHeaders(token);
@@ -121,14 +121,14 @@ class AddPropertyRepository {
         options: Options(headers: headers),
       );
       final ok = response.statusCode == 200;
-      if (ok) print("Property updated successfully!");
+      if (ok) debugPrint("Property updated successfully!");
       return ok;
     } on DioException catch (e) {
-      print('[UPDATE_PROPERTY] Error status: ${e.response?.statusCode}');
-      print('[UPDATE_PROPERTY] Error data: ${e.response?.data}');
+      debugPrint('[UPDATE_PROPERTY] Error status: ${e.response?.statusCode}');
+      debugPrint('[UPDATE_PROPERTY] Error data: ${e.response?.data}');
       rethrow;
     } catch (e) {
-      print('[UPDATE_PROPERTY] Unexpected error: $e');
+      debugPrint('[UPDATE_PROPERTY] Unexpected error: $e');
       rethrow;
     }
   }

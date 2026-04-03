@@ -19,10 +19,14 @@ final routerProvider = Provider<GoRouter>((ref) {
     initialLocation: '/',
     redirect: (context, state) {
       final authState = ref.read(authStateProvider);
+      final isLoading = authState.isLoading;
       final isAuthenticated = authState.isAuthenticated;
       final isLoginPage = state.fullPath == '/login';
       final isOnboarding = state.fullPath == '/onboarding';
       final isSplash = state.fullPath == '/';
+
+      // Never redirect while auth is still being determined
+      if (isLoading) return null;
       
       // Allow access to splash, onboarding, and login without auth
       if (isSplash || isOnboarding || isLoginPage) {

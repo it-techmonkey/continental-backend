@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart';
 import 'package:continental/config/api_config.dart';
 import 'package:continental/storage/token_storage.dart';
@@ -102,7 +103,12 @@ class PaymentDetailDto {
 }
 
 class PaymentsService {
-  final Dio _dio = Dio(BaseOptions(baseUrl: ApiConfig.baseUrl));
+  final Dio _dio = Dio(BaseOptions(
+    baseUrl: ApiConfig.baseUrl,
+    connectTimeout: const Duration(seconds: 60),
+    receiveTimeout: const Duration(seconds: 60),
+    sendTimeout: const Duration(seconds: 30),
+  ));
   final TokenStorage _tokenStorage = TokenStorage();
 
   Future<List<PaymentItemDto>> fetchPayments({String? status, String? propertyType, bool dedupe = true}) async {
@@ -145,7 +151,7 @@ class PaymentsService {
   }
 
   Future<bool> markPaymentAsPaid(int paymentId) async {
-    print('💰 [MARK_PAID] Marking payment $paymentId as paid');
+    debugPrint('💰 [MARK_PAID] Marking payment $paymentId as paid');
     try {
       final token = await _tokenStorage.getToken();
       final headers = ApiConfig.getAuthHeaders(token);
@@ -154,11 +160,11 @@ class PaymentsService {
         data: {'status': 'paid', 'payment_date': DateTime.now().toIso8601String()},
         options: Options(headers: headers),
       );
-      print('✅ [MARK_PAID] Response status: ${response.statusCode}');
-      print('📦 [MARK_PAID] Response data: ${response.data}');
+      debugPrint('✅ [MARK_PAID] Response status: ${response.statusCode}');
+      debugPrint('📦 [MARK_PAID] Response data: ${response.data}');
       return response.statusCode == 200;
     } catch (e) {
-      print('❌ [MARK_PAID] Error: $e');
+      debugPrint('❌ [MARK_PAID] Error: $e');
       return false;
     }
   }
@@ -172,7 +178,7 @@ class PaymentsService {
     String? propertyType,
     String? modeOfPayment,
   }) async {
-    print('💰 [UPDATE_PAYMENT] Updating payment $paymentId');
+    debugPrint('💰 [UPDATE_PAYMENT] Updating payment $paymentId');
     try {
       final token = await _tokenStorage.getToken();
       final headers = ApiConfig.getAuthHeaders(token);
@@ -196,11 +202,11 @@ class PaymentsService {
         data: data,
         options: Options(headers: headers),
       );
-      print('✅ [UPDATE_PAYMENT] Response status: ${response.statusCode}');
-      print('📦 [UPDATE_PAYMENT] Response data: ${response.data}');
+      debugPrint('✅ [UPDATE_PAYMENT] Response status: ${response.statusCode}');
+      debugPrint('📦 [UPDATE_PAYMENT] Response data: ${response.data}');
       return response.statusCode == 200;
     } catch (e) {
-      print('❌ [UPDATE_PAYMENT] Error: $e');
+      debugPrint('❌ [UPDATE_PAYMENT] Error: $e');
       return false;
     }
   }

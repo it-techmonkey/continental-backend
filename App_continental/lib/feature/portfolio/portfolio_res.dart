@@ -1,5 +1,6 @@
 // lib/portfolio_repository.dart
 import 'package:continental/feature/portfolio/portfolioPro.dart';
+import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart';
 import 'package:continental/config/api_config.dart';
 import 'package:intl/intl.dart';
@@ -17,16 +18,16 @@ class PortfolioRepository {
   Future<DashboardStats> fetchStats() async {
     try {
       final url = '${ApiConfig.baseUrl}/occupant-records/dashboard';
-      print('[PORTFOLIO] Fetching stats: GET ' + url);
+      debugPrint('[PORTFOLIO] Fetching stats: GET $url');
       final token = await _tokenStorage.getToken();
       final headers = ApiConfig.getAuthHeaders(token);
       final response = await _dio.get(
         url,
         options: Options(headers: headers),
       );
-      print('[PORTFOLIO] Status: ${response.statusCode}');
+      debugPrint('[PORTFOLIO] Status: ${response.statusCode}');
       if (response.data != null) {
-        print('[PORTFOLIO] Response: ${response.data}');
+        debugPrint('[PORTFOLIO] Response: ${response.data}');
       }
       Map<String, dynamic> statsJson = {};
       if (response.statusCode == 200 && response.data != null) {
@@ -220,11 +221,11 @@ class PortfolioRepository {
         // Otherwise → due (only current month)
         return hasPreviousUnpaid ? 'overDue' : 'due';
       } catch (e) {
-        print('[PORTFOLIO] Error calculating status for payment ${payment.id} (occupant ${payment.occupantRecordId}): $e');
+        debugPrint('[PORTFOLIO] Error calculating status for payment ${payment.id} (occupant ${payment.occupantRecordId}): $e');
         if (e is DioException) {
-             print('[PORTFOLIO] Request URL: ${e.requestOptions.path}');
-             print('[PORTFOLIO] Response Data: ${e.response?.data}');
-             print('[PORTFOLIO] Response Headers: ${e.response?.headers}');
+             debugPrint('[PORTFOLIO] Request URL: ${e.requestOptions.path}');
+             debugPrint('[PORTFOLIO] Response Data: ${e.response?.data}');
+             debugPrint('[PORTFOLIO] Response Headers: ${e.response?.headers}');
         }
         return 'due'; // Default to due on error
       }

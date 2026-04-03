@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../services/auth_service.dart';
+import '../services/dio_service.dart';
 import '../storage/token_storage.dart';
 
 // Providers
@@ -32,17 +33,20 @@ class AuthState {
     this.errorMessage,
   });
 
+  // Sentinel to distinguish "not provided" from "explicitly null"
+  static const _sentinel = Object();
+
   AuthState copyWith({
     bool? isAuthenticated,
-    User? user,
-    String? token,
+    Object? user = _sentinel,
+    Object? token = _sentinel,
     bool? isLoading,
     String? errorMessage,
   }) {
     return AuthState(
       isAuthenticated: isAuthenticated ?? this.isAuthenticated,
-      user: user ?? this.user,
-      token: token ?? this.token,
+      user: user == _sentinel ? this.user : user as User?,
+      token: token == _sentinel ? this.token : token as String?,
       isLoading: isLoading ?? this.isLoading,
       errorMessage: errorMessage,
     );
@@ -86,6 +90,10 @@ class AuthStateNotifier extends Notifier<AuthState> {
         isLoading: false,
         errorMessage: 'Error checking auth status',
       );
+    } finally {
+      // Allow 3 seconds for the server to fully wake up (Render cold-start)
+      // before the 401 interceptor starts treating 401s as real logouts.
+      Future.delayed(const Duration(seconds: 3), markAppInitialized);
     }
   }
 

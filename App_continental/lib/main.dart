@@ -2,8 +2,6 @@ import 'package:continental/utils/app_routes.dart';
 import 'package:continental/services/dio_service.dart';
 import 'package:continental/services/language_service.dart';
 import 'package:continental/providers/language_provider.dart';
-import 'package:device_preview/device_preview.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -54,7 +52,7 @@ class _MyAppState extends ConsumerState<MyApp> {
     
     return MaterialApp.router(
       debugShowCheckedModeBanner: false,
-      title: 'Flutter Demo',
+      title: 'Continental',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
       ),

@@ -9,12 +9,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class BottomNav extends ConsumerStatefulWidget {
+  const BottomNav({super.key});
   @override
   _BottomNavState createState() => _BottomNavState();
 }
 
 class _BottomNavState extends ConsumerState<BottomNav> {
-  int _currentIndex = 0;
 
   final List<Widget> _screens = [
     Dashboardscreen(),

@@ -60,7 +60,7 @@ final response = await dio.get('/some-endpoint', options: Options(headers: heade
 - **Request:**
   ```json
   {
-    "email": "admin@gmail.com",
+    "email": "admin@continental.com",
     "password": "admin@123"
   }
   ```
@@ -72,7 +72,7 @@ final response = await dio.get('/some-endpoint', options: Options(headers: heade
     "data": {
       "user": {
         "id": 1,
-        "email": "admin@gmail.com",
+        "email": "admin@continental.com",
         "name": "Admin User",
         "role": "ADMIN"
       },
@@ -86,7 +86,7 @@ final response = await dio.get('/some-endpoint', options: Options(headers: heade
 1. **Start your backend** on `localhost:3500`
 2. **Run the app** in iOS simulator
 3. **Login with:**
-   - Email: `admin@gmail.com`
+   - Email: `admin@continental.com`
    - Password: `admin@123`
 
 ## 🚀 Next Steps (When Adding More APIs)

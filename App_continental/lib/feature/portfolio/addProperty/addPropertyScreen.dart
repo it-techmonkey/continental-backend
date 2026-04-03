@@ -70,7 +70,6 @@ class _AddPropertyScreenState extends ConsumerState<AddPropertyScreen> {
   final List<String> _bathroomOptions = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10'];
   final List<String> _furnishingOptions = ['Furnished', 'Unfurnished', 'Partly Furnished'];
   final List<String> _cityOptions = ['Dubai', 'Abu Dhabi', 'Sharjah'];
-  final List<String> _locationOptions = ['Downtown Dubai', 'Dubai Marina', 'Palm Jumeirah'];
   late final List<String> _localityOptions = PropertyROIData.getLocalities();
   final List<String> _viewOptions = ['Sea View', 'Burj Khalifa View', 'Community View'];
   final List<String> _amenityOptions = [
@@ -785,8 +784,6 @@ class _CustomDropdownField extends StatelessWidget {
   final String? value;
   final List<String> items;
   final void Function(String?) onChanged;
-  // UPDATED: Add a hint parameter
-  final String hint;
   final String Function(String)? translate;
 
   const _CustomDropdownField({
@@ -794,8 +791,6 @@ class _CustomDropdownField extends StatelessWidget {
     required this.value,
     required this.items,
     required this.onChanged,
-    // UPDATED: Make the hint optional with a default value
-    this.hint = 'Select',
     this.translate,
   });
 
@@ -810,7 +805,7 @@ class _CustomDropdownField extends StatelessWidget {
           Text(label, style: GoogleFonts.inter(color: Colors.grey[400])),
           const SizedBox(height: 8),
           DropdownButtonFormField<String>(
-            hint: Text(t(hint), style: TextStyle(color: Colors.grey[700]), overflow: TextOverflow.ellipsis),
+            hint: Text(t('Select'), style: TextStyle(color: Colors.grey[700]), overflow: TextOverflow.ellipsis),
             value: value,
             items: items.map((String item) => DropdownMenuItem<String>(
               value: item,
@@ -1281,10 +1276,6 @@ class _AgreementUploadField extends StatelessWidget {
            lowerUrl.endsWith('.webp');
   }
 
-  bool _isPdf(String url) {
-    return url.toLowerCase().endsWith('.pdf');
-  }
-
   String _getFileName(String url) {
     try {
       final uri = Uri.parse(url);
@@ -1301,7 +1292,6 @@ class _AgreementUploadField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isImage = fileUrl != null && _isImage(fileUrl!);
-    final isPdf = fileUrl != null && _isPdf(fileUrl!);
     
     return Padding(
       padding: const EdgeInsets.only(bottom: 16.0),

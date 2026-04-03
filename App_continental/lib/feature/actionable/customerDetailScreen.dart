@@ -15,13 +15,10 @@ import 'package:continental/services/language_service.dart';
 import 'actionable_repository.dart'; // Import for the provider and model
 import 'package:continental/services/payments_service.dart';
 import 'package:continental/services/occupants_service.dart';
-import 'package:continental/feature/portfolio/portfolio_res.dart';
 import 'package:intl/intl.dart';
 import '../../widget/roi_graph_widget.dart';
-import '../../services/dio_service.dart';
 import '../../storage/token_storage.dart';
 import '../../config/api_config.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class CustomerDetailsScreen extends ConsumerWidget {
   final String itemId;
@@ -352,7 +349,7 @@ class CustomerDetailsScreen extends ConsumerWidget {
                         Text(translate('Paid'), style: GoogleFonts.inter(color: Colors.grey[400], fontSize: 12)),
                         const SizedBox(height: 8),
                         Text(
-                          percentageText!,
+                          percentageText,
                           style: GoogleFonts.inter(color: Colors.greenAccent, fontSize: 16, fontWeight: FontWeight.bold),
                         ),
                       ],
@@ -750,27 +747,6 @@ class _InfoColumn extends StatelessWidget {
   }
 }
 
-class _SummaryCard extends StatelessWidget {
-  final String title;
-  final String value;
-  const _SummaryCard({required this.title, required this.value});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(color: Colors.grey[900], borderRadius: BorderRadius.circular(12)),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(title, style: GoogleFonts.inter(color: Colors.grey[400], fontSize: 12)),
-          const SizedBox(height: 8),
-          Text(value, style: GoogleFonts.inter(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700)),
-        ],
-      ),
-    );
-  }
-}
 
 class _SummaryInfo extends StatelessWidget {
   final String title;
@@ -988,12 +964,8 @@ class _TimelineRow extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final amount = payment.emi ?? payment.rent ?? 0;
-    final isOffPlan = propertyDetails?.propertyType.toLowerCase().contains('off') ?? 
-                      payment.propertyType.toLowerCase().contains('off') ||
-                      payment.propertyType.toLowerCase().contains('plan');
-    final isEmpty = _isPaymentEmpty();
-    final hasDetailsNotPaid = _hasDetailsButNotPaid();
     final isPaid = payment.status.toLowerCase() == 'paid';
+    final hasDetailsNotPaid = _hasDetailsButNotPaid();
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),

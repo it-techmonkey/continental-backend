@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -26,14 +27,14 @@ class LanguageService {
     _loadCompleter = Completer<void>();
     
     try {
-      print('🔄 Loading translations from: $_translationsPath');
+      debugPrint('🔄 Loading translations from: $_translationsPath');
       final String jsonString = await rootBundle.loadString(_translationsPath);
       _translations = json.decode(jsonString) as Map<String, dynamic>;
-      print('✅ Translations loaded successfully. Keys: ${_translations!.length}');
+      debugPrint('✅ Translations loaded successfully. Keys: ${_translations!.length}');
       _loadCompleter!.complete();
     } catch (e, stackTrace) {
-      print('❌ Error loading translations: $e');
-      print('Stack trace: $stackTrace');
+      debugPrint('❌ Error loading translations: $e');
+      debugPrint('Stack trace: $stackTrace');
       _translations = {};
       _loadCompleter!.completeError(e);
     } finally {

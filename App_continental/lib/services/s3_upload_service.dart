@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:file_picker/file_picker.dart';
@@ -6,7 +7,12 @@ import '../config/api_config.dart';
 import '../storage/token_storage.dart';
 
 class S3UploadService {
-  final Dio _dio = Dio(BaseOptions(baseUrl: ApiConfig.baseUrl));
+  final Dio _dio = Dio(BaseOptions(
+    baseUrl: ApiConfig.baseUrl,
+    connectTimeout: const Duration(seconds: 60),
+    receiveTimeout: const Duration(seconds: 60),
+    sendTimeout: const Duration(seconds: 30),
+  ));
   final TokenStorage _tokenStorage = TokenStorage();
   final ImagePicker _picker = ImagePicker();
 
@@ -16,7 +22,7 @@ class S3UploadService {
       final XFile? image = await _picker.pickImage(source: source);
       return image;
     } catch (e) {
-      print('Error picking image: $e');
+      debugPrint('Error picking image: $e');
       return null;
     }
   }
@@ -34,7 +40,7 @@ class S3UploadService {
       );
       return result;
     } catch (e) {
-      print('Error picking file: $e');
+      debugPrint('Error picking file: $e');
       return null;
     }
   }
@@ -92,11 +98,11 @@ class S3UploadService {
       if (response.statusCode == 200 && response.data['success'] == true) {
         return response.data['data']['url'] as String;
       } else {
-        print('Upload failed: ${response.data}');
+        debugPrint('Upload failed: ${response.data}');
         return null;
       }
     } catch (e) {
-      print('Error uploading image: $e');
+      debugPrint('Error uploading image: $e');
       return null;
     }
   }
@@ -148,11 +154,11 @@ class S3UploadService {
       if (response.statusCode == 200 && response.data['success'] == true) {
         return response.data['data']['url'] as String;
       } else {
-        print('Upload failed: ${response.data}');
+        debugPrint('Upload failed: ${response.data}');
         return null;
       }
     } catch (e) {
-      print('Error uploading file: $e');
+      debugPrint('Error uploading file: $e');
       return null;
     }
   }

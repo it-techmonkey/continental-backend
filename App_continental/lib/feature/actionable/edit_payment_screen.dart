@@ -1,16 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'dart:io';
 import 'package:flutter_svg/flutter_svg.dart';
-import '../portfolio/addProperty/addPropertyScreen.dart';
 import '../../services/s3_upload_service.dart';
 import '../../services/payments_service.dart';
 import '../../services/occupants_service.dart';
 import 'actionable_repository.dart';
-import 'actionable_repository.dart' as actionable;
 import '../portfolio/portfolio_res.dart'; // For portfolioDataProvider
 import '../menu/payments/payment_details_provider.dart'; // For paymentDetailsProvider
 
@@ -69,7 +68,7 @@ class _EditPaymentScreenState extends ConsumerState<EditPaymentScreen> {
       try {
         _selectedDate = DateTime.parse(widget.paymentDate!);
       } catch (e) {
-        print('Error parsing payment date: $e');
+        debugPrint('Error parsing payment date: $e');
         _selectedDate = DateTime.now();
       }
     } else {
@@ -270,7 +269,7 @@ class _EditPaymentScreenState extends ConsumerState<EditPaymentScreen> {
       final property = await occupantsService.fetchOccupantDetail(widget.occupantRecordId);
       
       if (property == null) {
-        print('⚠️ [UPDATE_PROPERTY_PRICE] Property not found');
+        debugPrint('⚠️ [UPDATE_PROPERTY_PRICE] Property not found');
         return;
       }
 
@@ -285,7 +284,7 @@ class _EditPaymentScreenState extends ConsumerState<EditPaymentScreen> {
         final newPrice = (currentPrice + amountDifference).toInt();
         if (newPrice > 0) {
           updateData['price'] = newPrice;
-          print('💰 [UPDATE_PROPERTY_PRICE] Updating OffPlan price: $currentPrice -> $newPrice (diff: $amountDifference)');
+          debugPrint('💰 [UPDATE_PROPERTY_PRICE] Updating OffPlan price: $currentPrice -> $newPrice (diff: $amountDifference)');
         }
       } else {
         // For Rental: update rent
@@ -293,16 +292,16 @@ class _EditPaymentScreenState extends ConsumerState<EditPaymentScreen> {
         final newRent = (currentRent + amountDifference).toInt();
         if (newRent > 0) {
           updateData['rent'] = newRent;
-          print('💰 [UPDATE_PROPERTY_PRICE] Updating Rental rent: $currentRent -> $newRent (diff: $amountDifference)');
+          debugPrint('💰 [UPDATE_PROPERTY_PRICE] Updating Rental rent: $currentRent -> $newRent (diff: $amountDifference)');
         }
       }
 
       if (updateData.isNotEmpty) {
         final updateSuccess = await occupantsService.updateOccupantRecord(widget.occupantRecordId, updateData);
         if (updateSuccess) {
-          print('✅ [UPDATE_PROPERTY_PRICE] Property price updated successfully');
+          debugPrint('✅ [UPDATE_PROPERTY_PRICE] Property price updated successfully');
         } else {
-          print('❌ [UPDATE_PROPERTY_PRICE] Failed to update property price');
+          debugPrint('❌ [UPDATE_PROPERTY_PRICE] Failed to update property price');
         }
       }
     } catch (e) {
@@ -559,9 +558,6 @@ class _PaymentProofUploadField extends StatelessWidget {
            lowerUrl.endsWith('.webp');
   }
 
-  bool _isPdf(String url) {
-    return url.toLowerCase().endsWith('.pdf');
-  }
 
   String _getFileName(String url) {
     try {
@@ -579,7 +575,6 @@ class _PaymentProofUploadField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isImage = proofUrl != null && proofUrl!.isNotEmpty && _isImage(proofUrl!);
-    final isPdf = proofUrl != null && proofUrl!.isNotEmpty && _isPdf(proofUrl!);
     
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

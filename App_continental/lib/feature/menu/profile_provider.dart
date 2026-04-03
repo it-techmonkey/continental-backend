@@ -4,8 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:dio/dio.dart';
-import '../../config/api_config.dart';
-import '../../storage/token_storage.dart';
 import '../../services/dio_service.dart';
 
 // --- 1. Data Model ---
@@ -46,19 +44,18 @@ class UserProfile {
 // --- 2. Repository ---
 class ProfileRepository {
   final Dio _dio;
-  final TokenStorage _tokenStorage = TokenStorage();
 
   ProfileRepository(this._dio);
 
   Future<UserProfile> fetchUserProfile() async {
-    print("Fetching user profile...");
+    debugPrint("Fetching user profile...");
     try {
       // Token is automatically added by Dio interceptor
       final response = await _dio.get('/auth/profile');
       
       if (response.statusCode == 200 && response.data['success'] == true) {
         final data = response.data['data'];
-        print('📦 [PROFILE] Response data: $data');
+        debugPrint('📦 [PROFILE] Response data: $data');
         return UserProfile.fromJson({
           'name': data['name'] ?? '',
           'email': data['email'] ?? '',
@@ -68,13 +65,13 @@ class ProfileRepository {
       }
       throw Exception('Failed to fetch profile');
     } catch (e) {
-      print('❌ [PROFILE] Error fetching profile: $e');
+      debugPrint('❌ [PROFILE] Error fetching profile: $e');
       rethrow;
     }
   }
 
   Future<bool> saveUserProfile(UserProfile profile) async {
-    print("Saving user profile for ${profile.name}...");
+    debugPrint("Saving user profile for ${profile.name}...");
     try {
       // Token is automatically added by Dio interceptor
       final response = await _dio.put(
@@ -87,12 +84,12 @@ class ProfileRepository {
       );
       
       if (response.statusCode == 200 && response.data['success'] == true) {
-        print("Profile saved successfully!");
+        debugPrint("Profile saved successfully!");
         return true;
       }
       throw Exception('Failed to save profile');
     } catch (e) {
-      print('❌ [PROFILE] Error saving profile: $e');
+      debugPrint('❌ [PROFILE] Error saving profile: $e');
       rethrow;
     }
   }

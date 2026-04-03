@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
 class Developer {
@@ -64,7 +65,7 @@ class DevelopersService {
       
       return [];
     } catch (e) {
-      print('Error loading developers.json: $e');
+      debugPrint('Error loading developers.json: $e');
       return [];
     }
   }

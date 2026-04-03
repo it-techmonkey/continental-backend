@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart';
 import '../config/api_config.dart';
 import '../storage/token_storage.dart';
@@ -94,16 +95,36 @@ class AuthService {
   AuthService() {
     _dio.options.baseUrl = ApiConfig.baseUrl;
     _dio.options.headers = ApiConfig.defaultHeaders;
+    // Timeouts — the backend (Render free tier) cold-starts and can take ~30s
+    _dio.options.connectTimeout = const Duration(seconds: 60);
+    _dio.options.receiveTimeout = const Duration(seconds: 60);
+    _dio.options.sendTimeout = const Duration(seconds: 30);
+  }
+
+  /// Pre-warm the backend so cold-start delay occurs during splash,
+  /// not during login. Fire-and-forget — failures are silently ignored.
+  static Future<void> warmUpServer() async {
+    try {
+      final dio = Dio();
+      dio.options.connectTimeout = const Duration(seconds: 90);
+      dio.options.receiveTimeout = const Duration(seconds: 90);
+      final healthUrl = ApiConfig.baseUrl.replaceAll('/api', '/health');
+      debugPrint('🔥 [WARMUP] Pinging server: $healthUrl');
+      await dio.get(healthUrl);
+      debugPrint('🔥 [WARMUP] Server is awake');
+    } catch (e) {
+      debugPrint('⚠️ [WARMUP] Server warmup failed (may still be starting): $e');
+    }
   }
 
   // Login
   Future<ApiResponse<LoginResponse>> login(String email, String password) async {
     try {
-      print('🔐 [LOGIN] Starting login for: $email');
+      debugPrint('🔐 [LOGIN] Starting login for: $email');
       
       // Validate inputs
       if (email.isEmpty || password.isEmpty) {
-        print('❌ [LOGIN] Email or password empty');
+        debugPrint('❌ [LOGIN] Email or password empty');
         return ApiResponse(
           success: false,
           message: 'Email and password are required',
@@ -112,16 +133,16 @@ class AuthService {
       }
 
       final request = LoginRequest(email: email, password: password);
-      print('📡 [LOGIN] Sending request to: ${ApiConfig.baseUrl}${ApiConfig.login}');
-      print('📋 [LOGIN] Request data: ${request.toJson()}');
+      debugPrint('📡 [LOGIN] Sending request to: ${ApiConfig.baseUrl}${ApiConfig.login}');
+      debugPrint('📋 [LOGIN] Request data: ${request.toJson()}');
       
       final response = await _dio.post(
         ApiConfig.login,
         data: request.toJson(),
       );
 
-      print('✅ [LOGIN] Response status: ${response.statusCode}');
-      print('📦 [LOGIN] Response data: ${response.data}');
+      debugPrint('✅ [LOGIN] Response status: ${response.statusCode}');
+      debugPrint('📦 [LOGIN] Response data: ${response.data}');
 
       if (response.statusCode == 200) {
         final apiResponse = ApiResponse.fromJson(
@@ -131,16 +152,16 @@ class AuthService {
 
         // Save token if login successful
         if (apiResponse.success && apiResponse.data?.token != null) {
-          print('💾 [LOGIN] Saving token: ${apiResponse.data!.token!.substring(0, 20)}...');
+          debugPrint('💾 [LOGIN] Saving token: ${apiResponse.data!.token!.substring(0, 20)}...');
           await _tokenStorage.saveToken(apiResponse.data!.token!);
           await _tokenStorage.saveUser(apiResponse.data!.user);
-          print('✅ [LOGIN] Token saved successfully!');
-          print('👤 [LOGIN] User: ${apiResponse.data!.user?.name} (${apiResponse.data!.user?.email})');
+          debugPrint('✅ [LOGIN] Token saved successfully!');
+          debugPrint('👤 [LOGIN] User: ${apiResponse.data!.user?.name} (${apiResponse.data!.user?.email})');
         }
 
         return apiResponse;
       } else {
-        print('❌ [LOGIN] Failed with status: ${response.statusCode}');
+        debugPrint('❌ [LOGIN] Failed with status: ${response.statusCode}');
         return ApiResponse(
           success: false,
           message: 'Login failed',
@@ -149,11 +170,11 @@ class AuthService {
         );
       }
     } on DioException catch (e) {
-      print('❌ [LOGIN] DioException: ${e.message}');
-      print('📋 [LOGIN] Error details: ${e.response?.data}');
+      debugPrint('❌ [LOGIN] DioException: ${e.message}');
+      debugPrint('📋 [LOGIN] Error details: ${e.response?.data}');
       return _handleError(e);
     } catch (e) {
-      print('❌ [LOGIN] Unexpected error: $e');
+      debugPrint('❌ [LOGIN] Unexpected error: $e');
       return ApiResponse(
         success: false,
         message: 'An unexpected error occurred: ${e.toString()}',
@@ -166,9 +187,9 @@ class AuthService {
   Future<String?> getToken() async {
     final token = await _tokenStorage.getToken();
     if (token != null) {
-      print('🔑 [AUTH] Retrieved token: ${token.substring(0, 20)}...');
+      debugPrint('🔑 [AUTH] Retrieved token: ${token.substring(0, 20)}...');
     } else {
-      print('⚠️ [AUTH] No token found');
+      debugPrint('⚠️ [AUTH] No token found');
     }
     return token;
   }
@@ -177,26 +198,26 @@ class AuthService {
   Future<User?> getCurrentUser() async {
     final user = await _tokenStorage.getUser();
     if (user != null) {
-      print('👤 [AUTH] Retrieved user: ${user.name} (${user.email})');
+      debugPrint('👤 [AUTH] Retrieved user: ${user.name} (${user.email})');
     } else {
-      print('⚠️ [AUTH] No user found');
+      debugPrint('⚠️ [AUTH] No user found');
     }
     return user;
   }
 
   // Logout
   Future<void> logout() async {
-    print('🚪 [LOGOUT] Clearing token and user data...');
+    debugPrint('🚪 [LOGOUT] Clearing token and user data...');
     await _tokenStorage.clearToken();
     await _tokenStorage.clearUser();
-    print('✅ [LOGOUT] Logout complete');
+    debugPrint('✅ [LOGOUT] Logout complete');
   }
 
   // Check if user is logged in
   Future<bool> isLoggedIn() async {
     final token = await _tokenStorage.getToken();
     final isLoggedIn = token != null && token.isNotEmpty;
-    print('🔍 [AUTH] Is logged in: $isLoggedIn');
+    debugPrint('🔍 [AUTH] Is logged in: $isLoggedIn');
     return isLoggedIn;
   }
 

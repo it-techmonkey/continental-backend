@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/auth_service.dart';
@@ -14,7 +15,7 @@ class TokenStorage {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_tokenKey, token);
     } catch (e) {
-      print('Error saving token: $e');
+      debugPrint('Error saving token: $e');
     }
   }
 
@@ -24,7 +25,7 @@ class TokenStorage {
       final prefs = await SharedPreferences.getInstance();
       return prefs.getString(_tokenKey);
     } catch (e) {
-      print('Error getting token: $e');
+      debugPrint('Error getting token: $e');
       return null;
     }
   }
@@ -35,7 +36,7 @@ class TokenStorage {
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove(_tokenKey);
     } catch (e) {
-      print('Error clearing token: $e');
+      debugPrint('Error clearing token: $e');
     }
   }
 
@@ -51,7 +52,7 @@ class TokenStorage {
       final userJson = jsonEncode(user.toJson());
       await prefs.setString(_userKey, userJson);
     } catch (e) {
-      print('Error saving user: $e');
+      debugPrint('Error saving user: $e');
     }
   }
 
@@ -68,7 +69,7 @@ class TokenStorage {
       final userMap = jsonDecode(userJson) as Map<String, dynamic>;
       return User.fromJson(userMap);
     } catch (e) {
-      print('Error getting user: $e');
+      debugPrint('Error getting user: $e');
       return null;
     }
   }
@@ -79,7 +80,7 @@ class TokenStorage {
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove(_userKey);
     } catch (e) {
-      print('Error clearing user: $e');
+      debugPrint('Error clearing user: $e');
     }
   }
 
@@ -95,7 +96,7 @@ class TokenStorage {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool(_onboardingCompletedKey, true);
     } catch (e) {
-      print('Error marking onboarding completed: $e');
+      debugPrint('Error marking onboarding completed: $e');
     }
   }
 
@@ -105,7 +106,7 @@ class TokenStorage {
       final prefs = await SharedPreferences.getInstance();
       return prefs.getBool(_onboardingCompletedKey) ?? false;
     } catch (e) {
-      print('Error checking onboarding status: $e');
+      debugPrint('Error checking onboarding status: $e');
       return false;
     }
   }
