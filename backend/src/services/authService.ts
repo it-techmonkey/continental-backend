@@ -23,7 +23,14 @@ export class AuthService {
 
             // Check if user already exists
             const existingUser = await prisma.user.findUnique({
-                where: { email }
+                where: { email },
+                select: {
+                    id: true,
+                    email: true,
+                    name: true,
+                    password: true,
+                    role: true,
+                }
             });
 
             if (existingUser) {
@@ -43,6 +50,12 @@ export class AuthService {
                     password: hashedPassword,
                     name,
                     role: role?.toUpperCase() as Role || 'USER'
+                },
+                select: {
+                    id: true,
+                    email: true,
+                    name: true,
+                    role: true,
                 }
             });
 
@@ -87,7 +100,14 @@ export class AuthService {
 
             // Find user
             const user = await prisma.user.findUnique({
-                where: { email }
+                where: { email },
+                select: {
+                    id: true,
+                    email: true,
+                    name: true,
+                    password: true,
+                    role: true,
+                }
             });
 
             if (!user) {
