@@ -1,10 +1,13 @@
 // lib/portfolio_repository.dart
+import 'dart:convert';
+import 'dart:io';
 import 'package:continental/feature/portfolio/portfolioPro.dart';
 import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart';
 import 'package:continental/config/api_config.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/services.dart';
 import 'package:continental/storage/token_storage.dart';
 import 'portfolio_model.dart';
 import 'package:continental/services/payments_service.dart';
@@ -118,7 +121,7 @@ class PortfolioRepository {
       }).toList();
 
       // Apply search filter if search query is provided
-      final filteredItems = searchQuery.isNotEmpty
+      List<Map<String, dynamic>> filteredItems = searchQuery.isNotEmpty
           ? itemsWithPending.where((item) {
               final query = searchQuery.toLowerCase();
               return item['propertyName'].toString().toLowerCase().contains(query) ||
@@ -126,10 +129,86 @@ class PortfolioRepository {
             }).toList()
           : itemsWithPending;
 
+      // iOS fallback:
+      // If backend doesn't return due/overdue portfolio records, load local property catalog.
+      if (filteredItems.isEmpty && !kIsWeb && Platform.isIOS) {
+        filteredItems = await _loadIosFallbackPortfolioItems(searchQuery: searchQuery);
+      }
+
       return filteredItems;
     } catch (e) {
+      // iOS fallback on API failure as well.
+      if (!kIsWeb && Platform.isIOS) {
+        return _loadIosFallbackPortfolioItems(searchQuery: searchQuery);
+      }
       rethrow;
     }
+  }
+
+  Future<List<Map<String, dynamic>>> _loadIosFallbackPortfolioItems({String searchQuery = ''}) async {
+    try {
+      final raw = await _loadJsonCatalogAsset();
+      final decoded = json.decode(raw) as Map<String, dynamic>;
+      final data = decoded['data'] as Map<String, dynamic>?;
+      final items = (data?['items'] as List<dynamic>? ?? const []);
+
+      final query = searchQuery.trim().toLowerCase();
+      final fallbackItems = <Map<String, dynamic>>[];
+
+      for (final dynamic entry in items) {
+        if (entry is! Map<String, dynamic>) continue;
+
+        final title = (entry['title'] ?? entry['slug'] ?? '').toString().trim();
+        if (title.isEmpty) continue;
+
+        final builder = (entry['builder'] ?? 'Available Property').toString().trim();
+        final id = (entry['id'] is num) ? (entry['id'] as num).toInt() : 0;
+
+        if (query.isNotEmpty) {
+          final titleMatch = title.toLowerCase().contains(query);
+          final builderMatch = builder.toLowerCase().contains(query);
+          if (!titleMatch && !builderMatch) continue;
+        }
+
+        fallbackItems.add({
+          'id': id,
+          'propertyName': title,
+          'tenantName': builder,
+          'pendingAmount': '1',
+          'roi': '',
+          'status': 'due',
+        });
+      }
+
+      if (fallbackItems.length > 100) {
+        return fallbackItems.take(100).toList();
+      }
+      return fallbackItems;
+    } catch (e) {
+      debugPrint('[PORTFOLIO] iOS fallback load failed: $e');
+      return [];
+    }
+  }
+
+  Future<String> _loadJsonCatalogAsset() async {
+    const candidatePaths = <String>[
+      'data/all_data_uae_en.json',
+      'assets/data/all_data_uae_en.json',
+      'all_data_uae_en.json',
+    ];
+
+    Object? lastError;
+    for (final path in candidatePaths) {
+      try {
+        final raw = await rootBundle.loadString(path);
+        debugPrint('[PORTFOLIO] Loaded fallback catalog from: $path');
+        return raw;
+      } catch (e) {
+        lastError = e;
+      }
+    }
+
+    throw Exception('Unable to load fallback catalog asset. Last error: $lastError');
   }
 
   String _formatAmount(dynamic value) {

@@ -393,6 +393,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                 controller: _emailController,
                                 keyboardType: TextInputType.emailAddress,
                                 textInputAction: TextInputAction.next,
+                                textCapitalization: TextCapitalization.none,
+                                autocorrect: false,
+                                enableSuggestions: false,
                                 style: const TextStyle(color: Colors.white),
                                 validator: (value) {
                                   if (value == null || value.isEmpty) {

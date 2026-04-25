@@ -68,10 +68,6 @@
 		<key>NSMicrophoneUsageDescription</key>
 		<string>This app requires access to the microphone.</string>
 		<key>NSLocationWhenInUseUsageDescription</key>
-		<string>This app requires access to your location.</string>
-		<key>NSLocationAlwaysUsageDescription</key>
-		<string>This app requires access to your location for map features.</string>
-		<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-		<string>This app requires access to your location for map features.</string>
+		<string>Continental uses your location to show your current position on the property map, helping you find nearby rental and off-plan listings while you browse.</string>
 	</dict>
 </plist>

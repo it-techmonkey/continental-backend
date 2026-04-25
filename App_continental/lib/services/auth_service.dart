@@ -120,10 +120,11 @@ class AuthService {
   // Login
   Future<ApiResponse<LoginResponse>> login(String email, String password) async {
     try {
-      debugPrint('🔐 [LOGIN] Starting login for: $email');
+      final normalizedEmail = email.trim().toLowerCase();
+      debugPrint('🔐 [LOGIN] Starting login for: $normalizedEmail');
       
       // Validate inputs
-      if (email.isEmpty || password.isEmpty) {
+      if (normalizedEmail.isEmpty || password.isEmpty) {
         debugPrint('❌ [LOGIN] Email or password empty');
         return ApiResponse(
           success: false,
@@ -132,14 +133,30 @@ class AuthService {
         );
       }
 
-      final request = LoginRequest(email: email, password: password);
+      final request = LoginRequest(email: normalizedEmail, password: password);
       debugPrint('📡 [LOGIN] Sending request to: ${ApiConfig.baseUrl}${ApiConfig.login}');
       debugPrint('📋 [LOGIN] Request data: ${request.toJson()}');
       
-      final response = await _dio.post(
-        ApiConfig.login,
-        data: request.toJson(),
-      );
+      Response<dynamic> response;
+      try {
+        response = await _dio.post(
+          ApiConfig.login,
+          data: request.toJson(),
+        );
+      } on DioException catch (e) {
+        final shouldRetry = e.type == DioExceptionType.connectionTimeout ||
+            e.type == DioExceptionType.receiveTimeout ||
+            e.type == DioExceptionType.connectionError;
+        if (!shouldRetry) rethrow;
+
+        // Retry once after warmup for Render cold starts.
+        debugPrint('⚠️ [LOGIN] Initial attempt failed (${e.type}). Warming up server and retrying once...');
+        await warmUpServer();
+        response = await _dio.post(
+          ApiConfig.login,
+          data: request.toJson(),
+        );
+      }
 
       debugPrint('✅ [LOGIN] Response status: ${response.statusCode}');
       debugPrint('📦 [LOGIN] Response data: ${response.data}');
