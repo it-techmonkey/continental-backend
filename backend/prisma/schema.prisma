@@ -8,6 +8,7 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 // User model with authentication
@@ -20,7 +21,7 @@ model User {
   role         Role     @default(USER)
   profileImage String? // Profile image URL from S3
   createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  updatedAt    DateTime @default(now()) @updatedAt
 
   @@map("users")
 }
@@ -53,7 +54,7 @@ model Lead {
   message       String? // Additional message/notes
   notes         String? // Additional notes for internal use
   createdAt     DateTime   @default(now())
-  updatedAt     DateTime   @updatedAt
+  updatedAt     DateTime   @default(now()) @updatedAt
 
   @@map("leads")
 }

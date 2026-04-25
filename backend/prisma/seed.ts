@@ -193,14 +193,14 @@ async function main() {
                         status: 'paid' as const,
                         payment_date: new Date('2024-02-01'),
                         payment_proof: 'receipt_q1_2024.pdf',
-                        mode_of_payment: 'cash' as const,
+                        mode_of_payment: 'offline' as const,
                     },
                     {
                         rent: 84000,
                         status: 'paid' as const,
                         payment_date: new Date('2024-05-01'),
                         payment_proof: 'receipt_q2_2024.pdf',
-                        mode_of_payment: 'cash' as const,
+                        mode_of_payment: 'offline' as const,
                     },
                     {
                         rent: 84000,
@@ -318,7 +318,7 @@ async function main() {
                         status: 'paid' as const,
                         payment_date: new Date('2024-03-05'),
                         payment_proof: 'emi_mar_2024.pdf',
-                        mode_of_payment: 'cash' as const,
+                        mode_of_payment: 'online' as const,
                     },
                     {
                         emi: 52000,
@@ -389,7 +389,7 @@ async function main() {
                         status: 'paid' as const,
                         payment_date: new Date('2024-04-15'),
                         payment_proof: 'emi_apr_2024.pdf',
-                        mode_of_payment: 'cash' as const,
+                        mode_of_payment: 'offline' as const,
                     },
                     {
                         emi: 18500,
@@ -446,7 +446,7 @@ async function main() {
                         status: 'paid' as const,
                         payment_date: new Date('2023-12-10'),
                         payment_proof: 'emi_dec_2023.pdf',
-                        mode_of_payment: 'cash' as const,
+                        mode_of_payment: 'offline' as const,
                     },
                     {
                         emi: 42000,
@@ -474,7 +474,7 @@ async function main() {
                         status: 'paid' as const,
                         payment_date: new Date('2024-04-10'),
                         payment_proof: 'emi_apr_2024.pdf',
-                        mode_of_payment: 'cash' as const,
+                        mode_of_payment: 'offline' as const,
                     },
                     {
                         emi: 42000,

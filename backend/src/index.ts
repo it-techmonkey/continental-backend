@@ -35,10 +35,12 @@ app.get('/health', async (req: Request, res: Response) => {
             uptime: process.uptime()
         });
     } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
         res.status(503).json({
             status: 'ERROR',
             message: 'Server is running but database is not connected',
             database: 'Disconnected',
+            error: process.env.NODE_ENV === 'production' ? undefined : errorMessage,
             timestamp: new Date().toISOString(),
             uptime: process.uptime()
         });

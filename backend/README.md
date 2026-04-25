@@ -214,3 +214,32 @@ The server runs on `http://localhost:3500` by default. You can change the port b
 4. Run `npm run db:generate` to generate the Prisma client
 5. Run `npm run db:push` to create the database schema
 6. Optionally run `npm run db:seed` to populate with sample data
+
+## Supabase Migration (Recommended)
+
+If your previous free database expired, you can switch to Supabase Postgres quickly.
+
+1. Create a Supabase project.
+2. In Supabase, open **Project Settings -> Database -> Connection string**.
+3. Add these values to backend `.env`:
+
+```env
+# Pooled connection (runtime)
+DATABASE_URL="postgresql://postgres.<project-ref>:<password>@aws-0-<region>.pooler.supabase.com:6543/postgres?pgbouncer=true&connection_limit=1&sslmode=require"
+
+# Direct connection (migrations/seed)
+DIRECT_URL="postgresql://postgres:<password>@db.<project-ref>.supabase.co:5432/postgres?sslmode=require"
+```
+
+4. Run:
+
+```bash
+npm run db:generate
+npm run db:push
+npm run db:seed
+```
+
+5. Deploy backend with the same env vars (`DATABASE_URL`, `DIRECT_URL`, `JWT_SECRET`, `JWT_EXPIRES_IN`).
+6. Verify:
+   - `GET /health` should return `200` and `database: Connected`
+   - `POST /api/auth/login` should return `200` for seeded users

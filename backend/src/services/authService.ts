@@ -18,7 +18,8 @@ export class AuthService {
      */
     static async signup(userData: SignupRequest): Promise<AuthResponse> {
         try {
-            const { email, password, name, role } = userData;
+            const email = userData.email.trim().toLowerCase();
+            const { password, name, role } = userData;
 
             // Check if user already exists
             const existingUser = await prisma.user.findUnique({
@@ -67,9 +68,11 @@ export class AuthService {
             };
         } catch (error) {
             console.error('Signup error:', error);
+            const dbUnavailable = error instanceof Error &&
+                ((error as any).code === 'P1001' || (error as any).code === 'P1002');
             return {
                 success: false,
-                message: 'Failed to create user'
+                message: dbUnavailable ? 'Database unavailable' : 'Failed to create user'
             };
         }
     }
@@ -79,7 +82,8 @@ export class AuthService {
      */
     static async login(loginData: LoginRequest): Promise<AuthResponse> {
         try {
-            const { email, password } = loginData;
+            const email = loginData.email.trim().toLowerCase();
+            const { password } = loginData;
 
             // Find user
             const user = await prisma.user.findUnique({
@@ -125,9 +129,11 @@ export class AuthService {
             };
         } catch (error) {
             console.error('Login error:', error);
+            const dbUnavailable = error instanceof Error &&
+                ((error as any).code === 'P1001' || (error as any).code === 'P1002');
             return {
                 success: false,
-                message: 'Failed to login'
+                message: dbUnavailable ? 'Database unavailable' : 'Failed to login'
             };
         }
     }

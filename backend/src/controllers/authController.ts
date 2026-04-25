@@ -78,7 +78,7 @@ export class AuthController {
             }
 
             const loginData: LoginRequest = {
-                email,
+                email: String(email).trim().toLowerCase(),
                 password
             };
 
@@ -86,6 +86,8 @@ export class AuthController {
 
             if (result.success) {
                 res.status(200).json(result);
+            } else if (result.message === 'Database unavailable') {
+                res.status(503).json(result);
             } else {
                 res.status(401).json(result);
             }
