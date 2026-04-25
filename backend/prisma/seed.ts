@@ -14,41 +14,41 @@ async function main() {
 
     // Create Admin Users
     console.log('👤 Creating users...');
-    await prisma.user.upsert({
-        where: { email: 'admin@continental.com' },
-        update: {},
-        create: {
-            email: 'admin@continental.com',
-            name: 'Ahmed Al-Mansouri',
-            password: await bcrypt.hash('admin123', 10),
-            role: 'ADMIN',
-        },
-        select: { id: true },
-    });
+    const adminPasswordHash = await bcrypt.hash('admin123', 10);
+    const managerPasswordHash = await bcrypt.hash('manager123', 10);
+    const userPasswordHash = await bcrypt.hash('user123', 10);
 
-    await prisma.user.upsert({
-        where: { email: 'sarah.manager@continental.com' },
-        update: {},
-        create: {
-            email: 'sarah.manager@continental.com',
-            name: 'Sarah Hassan',
-            password: await bcrypt.hash('manager123', 10),
-            role: 'ADMIN',
-        },
-        select: { id: true },
-    });
+    // Use raw SQL upsert to avoid schema drift issues on optional columns
+    // (e.g. createdAt/profileImage differences across environments).
+    await prisma.$executeRaw`
+        INSERT INTO users (email, name, password, role)
+        VALUES ('admin@continental.com', 'Ahmed Al-Mansouri', ${adminPasswordHash}, 'ADMIN'::"Role")
+        ON CONFLICT (email)
+        DO UPDATE SET
+            name = EXCLUDED.name,
+            password = EXCLUDED.password,
+            role = EXCLUDED.role
+    `;
 
-    await prisma.user.upsert({
-        where: { email: 'mohammed.ali@example.com' },
-        update: {},
-        create: {
-            email: 'mohammed.ali@example.com',
-            name: 'Mohammed Ali',
-            password: await bcrypt.hash('user123', 10),
-            role: 'USER',
-        },
-        select: { id: true },
-    });
+    await prisma.$executeRaw`
+        INSERT INTO users (email, name, password, role)
+        VALUES ('sarah.manager@continental.com', 'Sarah Hassan', ${managerPasswordHash}, 'ADMIN'::"Role")
+        ON CONFLICT (email)
+        DO UPDATE SET
+            name = EXCLUDED.name,
+            password = EXCLUDED.password,
+            role = EXCLUDED.role
+    `;
+
+    await prisma.$executeRaw`
+        INSERT INTO users (email, name, password, role)
+        VALUES ('mohammed.ali@example.com', 'Mohammed Ali', ${userPasswordHash}, 'USER'::"Role")
+        ON CONFLICT (email)
+        DO UPDATE SET
+            name = EXCLUDED.name,
+            password = EXCLUDED.password,
+            role = EXCLUDED.role
+    `;
 
     console.log('✅ Users created');
 
