@@ -14,7 +14,7 @@ async function main() {
 
     // Create Admin Users
     console.log('👤 Creating users...');
-    const admin1 = await prisma.user.upsert({
+    await prisma.user.upsert({
         where: { email: 'admin@continental.com' },
         update: {},
         create: {
@@ -23,9 +23,10 @@ async function main() {
             password: await bcrypt.hash('admin123', 10),
             role: 'ADMIN',
         },
+        select: { id: true },
     });
 
-    const admin2 = await prisma.user.upsert({
+    await prisma.user.upsert({
         where: { email: 'sarah.manager@continental.com' },
         update: {},
         create: {
@@ -34,9 +35,10 @@ async function main() {
             password: await bcrypt.hash('manager123', 10),
             role: 'ADMIN',
         },
+        select: { id: true },
     });
 
-    const user1 = await prisma.user.upsert({
+    await prisma.user.upsert({
         where: { email: 'mohammed.ali@example.com' },
         update: {},
         create: {
@@ -45,6 +47,7 @@ async function main() {
             password: await bcrypt.hash('user123', 10),
             role: 'USER',
         },
+        select: { id: true },
     });
 
     console.log('✅ Users created');
@@ -193,14 +196,14 @@ async function main() {
                         status: 'paid' as const,
                         payment_date: new Date('2024-02-01'),
                         payment_proof: 'receipt_q1_2024.pdf',
-                        mode_of_payment: 'offline' as const,
+                        mode_of_payment: 'cash' as const,
                     },
                     {
                         rent: 84000,
                         status: 'paid' as const,
                         payment_date: new Date('2024-05-01'),
                         payment_proof: 'receipt_q2_2024.pdf',
-                        mode_of_payment: 'offline' as const,
+                        mode_of_payment: 'cash' as const,
                     },
                     {
                         rent: 84000,
@@ -389,7 +392,7 @@ async function main() {
                         status: 'paid' as const,
                         payment_date: new Date('2024-04-15'),
                         payment_proof: 'emi_apr_2024.pdf',
-                        mode_of_payment: 'offline' as const,
+                        mode_of_payment: 'cash' as const,
                     },
                     {
                         emi: 18500,
@@ -446,7 +449,7 @@ async function main() {
                         status: 'paid' as const,
                         payment_date: new Date('2023-12-10'),
                         payment_proof: 'emi_dec_2023.pdf',
-                        mode_of_payment: 'offline' as const,
+                        mode_of_payment: 'cash' as const,
                     },
                     {
                         emi: 42000,
@@ -474,7 +477,7 @@ async function main() {
                         status: 'paid' as const,
                         payment_date: new Date('2024-04-10'),
                         payment_proof: 'emi_apr_2024.pdf',
-                        mode_of_payment: 'offline' as const,
+                        mode_of_payment: 'cash' as const,
                     },
                     {
                         emi: 42000,
