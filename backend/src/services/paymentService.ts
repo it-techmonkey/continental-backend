@@ -62,6 +62,7 @@ export class PaymentService {
             const payments = await prisma.payments.findMany({
                 where: {
                     ...where,
+                    occupantRecordId: { not: null },
                     ...(filters?.property_type
                         ? { OccupantRecord: { property_type: filters.property_type } }
                         : {}),
@@ -107,7 +108,7 @@ export class PaymentService {
             if (filters?.dedupe !== false) {
                 const seen = new Set<number>();
                 list = transformedPayments.filter(p => {
-                    if (p.occupantRecordId == null) return true;
+                    if (p.occupantRecordId == null) return false;
                     if (seen.has(p.occupantRecordId)) return false;
                     seen.add(p.occupantRecordId);
                     return true;

@@ -1173,12 +1173,10 @@ class _LocationSearchFieldState extends State<_LocationSearchField> {
                   return ListTile(
                     dense: true,
                     title: Text(s.description, style: const TextStyle(color: Colors.white)),
-                    onTap: () async {
-                      final d = await _places.details(s.placeId);
-                      if (d != null){
-                        setState(() { _controller.text = d.name; _suggestions = []; });
-                        widget.onSelected(d.name, d.lat, d.lng);
-                      }
+                    onTap: () {
+                      final d = _places.fromSuggestion(s);
+                      setState(() { _controller.text = d.name; _suggestions = []; });
+                      widget.onSelected(d.name, d.lat, d.lng);
                     },
                   );
                 },

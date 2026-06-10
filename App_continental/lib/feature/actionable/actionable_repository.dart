@@ -20,11 +20,9 @@ class ActionableRepository {
     }
     // If filter is 'All', propertyTypeFilter remains null to fetch all properties
     
-    print('🔍 [FILTER] Requested filter: $filter, propertyTypeFilter: $propertyTypeFilter, searchQuery: $searchQuery');
     
     // Fetch all occupant records (properties) instead of filtering by payments
     final occupants = await _occupantsService.fetchAllOccupantRecords(propertyType: propertyTypeFilter);
-    print('📊 [FILTER] Received ${occupants.length} properties');
     
     // Calculate status and pending amount for each property
     final items = await Future.wait(occupants.map((occupant) async {
@@ -74,7 +72,6 @@ class ActionableRepository {
       );
     }));
     
-    print('📊 [FILTER] Processed ${items.length} items');
     
     // Apply search filter if search query is provided
     if (searchQuery.isNotEmpty) {
@@ -83,7 +80,6 @@ class ActionableRepository {
         return item.propertyName.toLowerCase().contains(query) ||
                item.name.toLowerCase().contains(query);
       }).toList();
-      print('🔍 [SEARCH] After search filter: ${filteredItems.length} items');
       return filteredItems;
     }
     
@@ -166,7 +162,6 @@ class ActionableRepository {
         // Otherwise → due (only current month)
         return hasPreviousUnpaid ? 'overdue' : 'due';
       } catch (e) {
-        print('[ACTIONABLE] Error calculating status: $e');
         return 'due'; // Default to due on error
       }
     }
@@ -197,7 +192,7 @@ class ActionableRepository {
     return CustomerDetails(
       propertyName: dto.propertyName,
       developerName: 'By ${dto.developerName}',
-      imageUrl: dto.imageUrl ?? 'https://picsum.photos/800/400',
+      imageUrl: dto.imageUrl ?? '',
       tenantName: dto.name,
       phone: dto.phone, // Added phone to CustomerDetails
       installmentsPending: pending.toString(),

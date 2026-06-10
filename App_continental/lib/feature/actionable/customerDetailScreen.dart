@@ -230,10 +230,10 @@ class CustomerDetailsScreen extends ConsumerWidget {
         background: Stack(
           fit: StackFit.expand,
           children: [
-            Image.network(
-              details.imageUrl,
-              fit: BoxFit.cover,
-            ),
+            details.imageUrl.isNotEmpty
+                ? Image.network(details.imageUrl, fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => Container(color: Colors.grey[900]))
+                : Container(color: Colors.grey[900]),
             // Gradient overlay for better text visibility
             Container(
               decoration: const BoxDecoration(

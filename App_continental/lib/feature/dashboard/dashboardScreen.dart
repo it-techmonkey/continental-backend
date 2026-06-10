@@ -1,9 +1,11 @@
-import 'package:flutter/material.dart';
 import 'dart:ui' as ui;
+import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:latlong2/latlong.dart';
+import '../../config/api_config.dart';
 import '../../providers/maps_provider.dart';
 import '../../providers/language_provider.dart';
 import '../../services/language_service.dart';
@@ -17,52 +19,28 @@ class Dashboardscreen extends ConsumerStatefulWidget {
 }
 
 class _DashboardscreenState extends ConsumerState<Dashboardscreen> {
-  GoogleMapController? _mapController;
-  final LatLng _dubaiCenter = const LatLng(25.2048, 55.2708); // Dubai coordinates
-  BitmapDescriptor? _rentalIcon;
-  BitmapDescriptor? _offPlanIcon;
-  static const String _darkMapStyle = '''
-  [
-    {"elementType":"geometry","stylers":[{"color":"#1d1d1d"}]},
-    {"elementType":"labels.text.fill","stylers":[{"color":"#8a8a8a"}]},
-    {"elementType":"labels.text.stroke","stylers":[{"color":"#1d1d1d"}]},
-    {"featureType":"road","elementType":"geometry","stylers":[{"color":"#2a2a2a"}]},
-    {"featureType":"road","elementType":"labels.text.fill","stylers":[{"color":"#8a8a8a"}]},
-    {"featureType":"poi","elementType":"labels.text.fill","stylers":[{"color":"#8a8a8a"}]},
-    {"featureType":"water","elementType":"geometry","stylers":[{"color":"#0e0e0e"}]},
-    {"featureType":"transit","stylers":[{"visibility":"off"}]}
-  ]
-  ''';
+  final MapController _mapController = MapController();
+  static const LatLng _dubaiCenter = LatLng(25.2048, 55.2708);
 
-  @override
-  void dispose() {
-    _mapController?.dispose();
-    super.dispose();
+  // Cache for rendered marker images
+  final Map<String, ui.Image> _iconCache = {};
+
+  String _capitalizeFirst(String text) {
+    if (text.isEmpty) return text;
+    return text[0].toUpperCase() + (text.length > 1 ? text.substring(1) : '');
   }
 
-  @override
-  void initState() {
-    super.initState();
-    _generateMarkerIcons();
+  String _extractLabel(String developerName) {
+    if (developerName.isEmpty) return '';
+    final words = developerName.trim().split(RegExp(r'\s+'));
+    if (words.isEmpty) return '';
+    final word = (words.length > 1 && words[0].toLowerCase() == 'dubai')
+        ? words[1]
+        : words[0];
+    return _capitalizeFirst(word);
   }
 
-  Future<void> _generateMarkerIcons() async {
-    // icons are generated per marker with text; keep base fallback colors
-    _rentalIcon = await _buildCircleMarkerIconWithText(
-      text: '',
-      background: const Color(0xFF6C2BD9),
-      border: const Color(0xFFB896FF),
-    );
-    _offPlanIcon = await _buildCircleMarkerIconWithText(
-      text: '',
-      background: const Color(0xFFF7B500),
-      border: const Color(0xFFFFE08A),
-    );
-    if (mounted) setState(() {});
-  }
-
-  // Draws a circular marker with a text label (lowercased, truncated)
-  Future<BitmapDescriptor> _buildCircleMarkerIconWithText({
+  Future<ui.Image> _renderMarkerImage({
     required String text,
     required Color background,
     required Color border,
@@ -70,38 +48,42 @@ class _DashboardscreenState extends ConsumerState<Dashboardscreen> {
   }) async {
     final recorder = ui.PictureRecorder();
     final canvas = Canvas(recorder);
-    final size = Size(diameter.toDouble(), diameter.toDouble());
+    final sz = diameter.toDouble();
+    final center = Offset(sz / 2, sz / 2);
+    final radius = sz / 2;
 
-    final center = Offset(size.width / 2, size.height / 2);
-    final radius = size.width / 2;
+    // Shadow
+    canvas.drawCircle(
+      center,
+      radius - 3,
+      Paint()
+        ..color = Colors.black.withOpacity(0.35)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 9),
+    );
+    // Outer coloured ring
+    canvas.drawCircle(
+      center,
+      radius - 7,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 6
+        ..color = border,
+    );
+    // Inner white ring
+    canvas.drawCircle(
+      center,
+      radius - 11,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2
+        ..color = Colors.white.withOpacity(0.9),
+    );
+    // White fill
+    canvas.drawCircle(center, radius - 16, Paint()..color = Colors.white);
 
-    // Outer soft shadow ring
-    final shadowPaint = Paint()
-      ..color = Colors.black.withOpacity(0.35)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 9);
-    canvas.drawCircle(center, radius - 3, shadowPaint);
-
-    // Primary colored ring
-    final primaryRing = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 6
-      ..color = border;
-    canvas.drawCircle(center, radius - 7, primaryRing);
-
-    // Secondary light ring to mimic double border
-    final secondaryRing = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2
-      ..color = Colors.white.withOpacity(0.9);
-    canvas.drawCircle(center, radius - 11, secondaryRing);
-
-    // Inner fill (white like the reference)
-    final innerPaint = Paint()..color = Colors.white;
-    canvas.drawCircle(center, radius - 16, innerPaint);
-
-    // Text label - use text as-is (already capitalized when passed)
+    // Label text
     final truncated = text.length > 15 ? text.substring(0, 15) : text;
-    final textPainter = TextPainter(
+    final tp = TextPainter(
       text: TextSpan(
         text: truncated,
         style: const TextStyle(
@@ -115,103 +97,52 @@ class _DashboardscreenState extends ConsumerState<Dashboardscreen> {
       textAlign: TextAlign.center,
       maxLines: 1,
     );
-    textPainter.layout(maxWidth: size.width - 42);
-    final offset = Offset(
-      (size.width - textPainter.width) / 2,
-      (size.height - textPainter.height) / 2,
-    );
-    textPainter.paint(canvas, offset);
+    tp.layout(maxWidth: sz - 42);
+    tp.paint(canvas, Offset((sz - tp.width) / 2, (sz - tp.height) / 2));
 
-    // Record to image
-    final image = await recorder.endRecording().toImage(diameter, diameter);
-    final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
-    return BitmapDescriptor.fromBytes(bytes!.buffer.asUint8List());
+    return recorder.endRecording().toImage(diameter, diameter);
   }
 
-  final Map<String, BitmapDescriptor> _labelIconCache = {};
-
-  void _ensureLabelIcon(String key, String displayText, bool isRental) async {
-    if (_labelIconCache.containsKey(key)) return;
+  Future<ui.Image> _getOrBuildIcon(String key, String label, bool isRental) async {
+    if (_iconCache.containsKey(key)) return _iconCache[key]!;
     final bg = isRental ? const Color(0xFF6C2BD9) : const Color(0xFFF7B500);
     final border = isRental ? const Color(0xFFB896FF) : const Color(0xFFFFE08A);
-    // Use the capitalized display text for the icon, but truncate if needed
-    final truncatedDisplay = displayText.length > 15 ? displayText.substring(0, 15) : displayText;
-    final icon = await _buildCircleMarkerIconWithText(text: truncatedDisplay, background: bg, border: border);
-    _labelIconCache[key] = icon;
-    if (mounted) setState(() {});
+    final img = await _renderMarkerImage(text: label, background: bg, border: border);
+    _iconCache[key] = img;
+    return img;
   }
 
-  // Helper function to extract the appropriate word from developer name
-  String _capitalizeFirst(String text) {
-    if (text.isEmpty) return text;
-    return text[0].toUpperCase() + (text.length > 1 ? text.substring(1) : '');
-  }
+  void _fitMarkers(List<PropertyRecord> records) {
+    final valid = records.where((r) => r.hasValidCoordinates).toList();
+    if (valid.isEmpty) return;
 
-  String _extractLabelFromDeveloperName(String developerName) {
-    if (developerName.isEmpty) return '';
-    
-    final words = developerName.trim().split(RegExp(r'\s+'));
-    if (words.isEmpty) return '';
-    
-    String result;
-    // If first word is "dubai" (case insensitive), take the second word
-    if (words.length > 1 && words[0].toLowerCase() == 'dubai') {
-      result = words[1];
-    } else {
-      // Otherwise, return the first word
-      result = words[0];
+    var minLat = valid.first.latitude!;
+    var maxLat = valid.first.latitude!;
+    var minLng = valid.first.longitude!;
+    var maxLng = valid.first.longitude!;
+
+    for (final r in valid) {
+      if (r.latitude! < minLat) minLat = r.latitude!;
+      if (r.latitude! > maxLat) maxLat = r.latitude!;
+      if (r.longitude! < minLng) minLng = r.longitude!;
+      if (r.longitude! > maxLng) maxLng = r.longitude!;
     }
-    
-    // Capitalize the first letter
-    return _capitalizeFirst(result);
-  }
 
-  Set<Marker> _buildMarkers(List<PropertyRecord> records) {
-    final markers = <Marker>{};
-    
-    for (var i = 0; i < records.length; i++) {
-      final record = records[i];
-      
-      if (!record.hasValidCoordinates) continue;
-      
-      // Different icons for Rental vs Off Plan
-      final isRental = record.propertyType.toLowerCase() == 'rental';
-      
-      // Extract label from developer name or property name
-      String labelText;
-      if (record.developerName.isNotEmpty) {
-        labelText = _extractLabelFromDeveloperName(record.developerName);
-      } else {
-        // Apply same logic to property name if developer name is empty
-        labelText = _extractLabelFromDeveloperName(record.propertyName);
-      }
-      
-      // Use lowercase for cache key, but keep capitalized version for display
-      final labelLower = labelText.toLowerCase();
-      final key = labelLower.length > 15 ? labelLower.substring(0, 15) : labelLower;
-      // Ensure generation in background with capitalized text for display
-      _ensureLabelIcon(key, labelText, isRental);
-      final icon = _labelIconCache[key] ?? (isRental ? (_rentalIcon ?? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueViolet)) : (_offPlanIcon ?? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueYellow)));
-
-      markers.add(
-        Marker(
-          markerId: MarkerId('property_$i'),
-          position: LatLng(record.latitude!, record.longitude!),
-          infoWindow: InfoWindow(
-            title: record.propertyName,
-            snippet: '${record.developerName}\n${record.propertyType}',
-          ),
-          icon: icon,
-          onTap: () {
-            if (record.id != null) {
-              context.goNamed('details', pathParameters: {'itemId': record.id.toString()});
-            }
-          },
+    _mapController.fitCamera(
+      CameraFit.bounds(
+        bounds: LatLngBounds(
+          LatLng(minLat - 0.01, minLng - 0.01),
+          LatLng(maxLat + 0.01, maxLng + 0.01),
         ),
-      );
-    }
-    
-    return markers;
+        padding: const EdgeInsets.all(60),
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _mapController.dispose();
+    super.dispose();
   }
 
   @override
@@ -219,22 +150,21 @@ class _DashboardscreenState extends ConsumerState<Dashboardscreen> {
     final currentFilter = ref.watch(mapsFilterProvider);
     final mapsDataAsync = ref.watch(mapsDataProvider);
     final languageCode = ref.watch(languageProvider);
-    final translate = (String key) => LanguageService.translate(key, languageCode);
+    final t = (String key) => LanguageService.translate(key, languageCode);
 
     return Scaffold(
       backgroundColor: Colors.black,
       body: SafeArea(
         child: Column(
           children: [
-            // Header Section
+            // ── Header ──────────────────────────────────────────────────
             Padding(
-              padding: const EdgeInsets.all(16.0),
+              padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Product Branding Text
                   Text(
-                    translate('A Product By Torodo Group'),
+                    t('A Product By Torodo Group'),
                     style: GoogleFonts.inter(
                       color: Colors.white,
                       fontSize: 20,
@@ -242,57 +172,52 @@ class _DashboardscreenState extends ConsumerState<Dashboardscreen> {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  
-                  // Search Bar
                   TextField(
                     style: const TextStyle(color: Colors.black),
                     decoration: InputDecoration(
-                      hintText: translate('Search for Properties'),
+                      hintText: t('Search for Properties'),
                       hintStyle: TextStyle(color: Colors.grey[600]),
                       filled: true,
                       fillColor: Colors.white,
                       prefixIcon: const Icon(Icons.search, color: Colors.grey),
                       border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12.0),
+                        borderRadius: BorderRadius.circular(12),
                         borderSide: BorderSide.none,
                       ),
                     ),
-                    onChanged: (value) {
-                      ref.read(mapsSearchProvider.notifier).setSearch(value);
-                    },
+                    onChanged: (v) =>
+                        ref.read(mapsSearchProvider.notifier).setSearch(v),
                   ),
                   const SizedBox(height: 12),
-                  
-                  // Filter Buttons
                   Row(
                     children: [
                       Expanded(
                         child: _FilterButton(
-                          label: translate('All'),
+                          label: t('All'),
                           isSelected: currentFilter == 'All',
-                          onTap: () {
-                            ref.read(mapsFilterProvider.notifier).setFilter('All');
-                          },
+                          onTap: () => ref
+                              .read(mapsFilterProvider.notifier)
+                              .setFilter('All'),
                         ),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
                         child: _FilterButton(
-                          label: translate('Rental'),
+                          label: t('Rental'),
                           isSelected: currentFilter == 'Rental',
-                          onTap: () {
-                            ref.read(mapsFilterProvider.notifier).setFilter('Rental');
-                          },
+                          onTap: () => ref
+                              .read(mapsFilterProvider.notifier)
+                              .setFilter('Rental'),
                         ),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
                         child: _FilterButton(
-                          label: translate('Off Plan'),
+                          label: t('Off Plan'),
                           isSelected: currentFilter == 'Off Plan',
-                          onTap: () {
-                            ref.read(mapsFilterProvider.notifier).setFilter('Off Plan');
-                          },
+                          onTap: () => ref
+                              .read(mapsFilterProvider.notifier)
+                              .setFilter('Off Plan'),
                         ),
                       ),
                     ],
@@ -300,169 +225,166 @@ class _DashboardscreenState extends ConsumerState<Dashboardscreen> {
                 ],
               ),
             ),
-            
-            // Map Section
+
+            // ── Map ─────────────────────────────────────────────────────
             Expanded(
               child: mapsDataAsync.when(
                 loading: () => const Center(
                   child: CircularProgressIndicator(color: Colors.yellow),
                 ),
-                error: (err, stack) => Center(
+                error: (err, _) => Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.error_outline, color: Colors.red, size: 48),
+                      const Icon(Icons.error_outline,
+                          color: Colors.red, size: 48),
                       const SizedBox(height: 16),
-                      Text(
-                        'Error loading map',
-                        style: GoogleFonts.inter(color: Colors.white),
-                      ),
+                      Text('Error loading map',
+                          style: GoogleFonts.inter(color: Colors.white)),
                       const SizedBox(height: 8),
-                      Text(
-                        err.toString(),
-                        style: GoogleFonts.inter(color: Colors.grey),
-                        textAlign: TextAlign.center,
-                      ),
+                      Text(err.toString(),
+                          style: GoogleFonts.inter(color: Colors.grey),
+                          textAlign: TextAlign.center),
                     ],
                   ),
                 ),
                 data: (data) {
-                  if (data == null || data.records.isEmpty) {
-                    return Center(
-                      child: Text(
-                        'No properties found',
-                        style: GoogleFonts.inter(color: Colors.white),
-                      ),
-                    );
-                  }
-
-                  // Filter records with valid coordinates
-                  final validRecords = data.records
+                  final validRecords = (data?.records ?? [])
                       .where((r) => r.hasValidCoordinates)
                       .toList();
 
-                  if (validRecords.isEmpty) {
-                    return Center(
-                      child: Text(
-                        'No properties with valid locations',
-                        style: GoogleFonts.inter(color: Colors.white),
-                      ),
-                    );
-                  }
+                  final initialCenter = validRecords.isNotEmpty
+                      ? LatLng(validRecords.first.latitude!,
+                          validRecords.first.longitude!)
+                      : _dubaiCenter;
 
                   return Stack(
                     children: [
-                      GoogleMap(
-                        initialCameraPosition: CameraPosition(
-                          target: validRecords.isNotEmpty
-                              ? LatLng(
-                                  validRecords.first.latitude!,
-                                  validRecords.first.longitude!,
-                                )
-                              : _dubaiCenter,
-                          zoom: 15.0,
+                      FlutterMap(
+                        mapController: _mapController,
+                        options: MapOptions(
+                          initialCenter: initialCenter,
+                          initialZoom: 12,
+                          backgroundColor: const Color(0xFF1d1d1d),
+                          onMapReady: () {
+                            if (validRecords.length > 1) {
+                              Future.delayed(
+                                const Duration(milliseconds: 300),
+                                () => _fitMarkers(validRecords),
+                              );
+                            }
+                          },
                         ),
-                        markers: _buildMarkers(validRecords),
-                        myLocationEnabled: true,
-                        myLocationButtonEnabled: true,
-                        mapType: MapType.normal,
-                        zoomControlsEnabled: false,
-                        zoomGesturesEnabled: true,
-                        scrollGesturesEnabled: true,
-                        tiltGesturesEnabled: true,
-                        rotateGesturesEnabled: true,
-                        mapToolbarEnabled: true,
-                        compassEnabled: true,
-                        liteModeEnabled: false,
-                        buildingsEnabled: true,
-                    onMapCreated: (GoogleMapController controller) async {
-                      _mapController = controller;
-                      print('🗺️ Map created successfully!');
-                      print('🗺️ Map controller initialized');
-                      await controller.setMapStyle(_darkMapStyle);
-                      
-                      // Force a camera update to trigger tile loading
-                      await Future.delayed(const Duration(milliseconds: 300));
-                      
-                      if (validRecords.isNotEmpty && validRecords.first.hasValidCoordinates) {
-                        final firstRecord = validRecords.first;
-                        await controller.animateCamera(
-                          CameraUpdate.newCameraPosition(
-                            CameraPosition(
-                              target: LatLng(
-                                firstRecord.latitude!,
-                                firstRecord.longitude!,
-                              ),
-                              zoom: 14.0,
-                            ),
+                        children: [
+                          // MapTiler dark style tiles
+                          TileLayer(
+                            urlTemplate:
+                                'https://api.maptiler.com/maps/dataviz-dark/{z}/{x}/{y}.png?key=${ApiConfig.mapTilerApiKey}',
+                            userAgentPackageName: 'com.continental.app',
+                            tileDisplay: const TileDisplay.fadeIn(),
                           ),
-                        );
-                        print('📸 Camera moved to first property');
-                      }
-                      
-                      // Fit all markers in view after a delay
-                      await Future.delayed(const Duration(milliseconds: 500));
-                      if (validRecords.isNotEmpty) {
-                        print('📍 Fitting ${validRecords.length} markers in view');
-                        _fitMarkersInView(validRecords);
-                      }
-                    },
-                        onTap: (LatLng location) {
-                          print('🔍 Map tapped at: ${location.latitude}, ${location.longitude}');
-                        },
+                          // Property markers
+                          MarkerLayer(
+                            markers: validRecords.map((record) {
+                              final isRental =
+                                  record.propertyType.toLowerCase() == 'rental';
+                              final label = record.developerName.isNotEmpty
+                                  ? _extractLabel(record.developerName)
+                                  : _extractLabel(record.propertyName);
+                              final cacheKey =
+                                  '${isRental ? 'r' : 'o'}_$label'.toLowerCase();
+
+                              return Marker(
+                                point: LatLng(
+                                    record.latitude!, record.longitude!),
+                                width: 72,
+                                height: 72,
+                                child: GestureDetector(
+                                  onTap: () {
+                                    if (record.id != null) {
+                                      context.goNamed('details',
+                                          pathParameters: {
+                                            'itemId': record.id.toString()
+                                          });
+                                    }
+                                  },
+                                  child: Tooltip(
+                                    message:
+                                        '${record.propertyName}\n${record.developerName}',
+                                    child: FutureBuilder<ui.Image>(
+                                      future: _getOrBuildIcon(
+                                          cacheKey, label, isRental),
+                                      builder: (context, snap) {
+                                        if (!snap.hasData) {
+                                          return Container(
+                                            width: 36,
+                                            height: 36,
+                                            decoration: BoxDecoration(
+                                              color: isRental
+                                                  ? const Color(0xFF6C2BD9)
+                                                  : const Color(0xFFF7B500),
+                                              shape: BoxShape.circle,
+                                              border: Border.all(
+                                                  color: Colors.white,
+                                                  width: 2),
+                                            ),
+                                          );
+                                        }
+                                        return RawImage(
+                                          image: snap.data,
+                                          fit: BoxFit.contain,
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                ),
+                              );
+                            }).toList(),
+                          ),
+                        ],
                       ),
-                      // Custom Zoom Controls
+
+                      // ── Zoom controls ──────────────────────────────────
                       Positioned(
                         right: 10,
                         bottom: 140,
                         child: Column(
                           children: [
-                            // Zoom In Button
-                            Material(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(8),
-                              elevation: 4,
-                              child: InkWell(
-                                onTap: () {
-                                  _mapController?.animateCamera(
-                                    CameraUpdate.zoomIn(),
-                                  );
-                                },
-                                child: Container(
-                                  width: 40,
-                                  height: 40,
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: const Icon(Icons.add, color: Colors.black),
-                                ),
+                            _ZoomButton(
+                              icon: Icons.add,
+                              onTap: () => _mapController.move(
+                                _mapController.camera.center,
+                                _mapController.camera.zoom + 1,
                               ),
                             ),
                             const SizedBox(height: 2),
-                            // Zoom Out Button
-                            Material(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(8),
-                              elevation: 4,
-                              child: InkWell(
-                                onTap: () {
-                                  _mapController?.animateCamera(
-                                    CameraUpdate.zoomOut(),
-                                  );
-                                },
-                                child: Container(
-                                  width: 40,
-                                  height: 40,
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: const Icon(Icons.remove, color: Colors.black),
-                                ),
+                            _ZoomButton(
+                              icon: Icons.remove,
+                              onTap: () => _mapController.move(
+                                _mapController.camera.center,
+                                _mapController.camera.zoom - 1,
                               ),
                             ),
                           ],
                         ),
                       ),
+
+                      // ── No properties overlay ──────────────────────────
+                      if (validRecords.isEmpty)
+                        Center(
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 20, vertical: 12),
+                            decoration: BoxDecoration(
+                              color: Colors.black87,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              'No properties with valid locations',
+                              style: GoogleFonts.inter(color: Colors.white),
+                            ),
+                          ),
+                        ),
                     ],
                   );
                 },
@@ -470,39 +392,6 @@ class _DashboardscreenState extends ConsumerState<Dashboardscreen> {
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  void _fitMarkersInView(List<PropertyRecord> records) {
-    if (_mapController == null || records.isEmpty) return;
-
-    final bounds = records
-        .where((r) => r.hasValidCoordinates)
-        .map((r) => LatLng(r.latitude!, r.longitude!))
-        .toList();
-
-    if (bounds.isEmpty) return;
-
-    double minLat = bounds.first.latitude;
-    double maxLat = bounds.first.latitude;
-    double minLng = bounds.first.longitude;
-    double maxLng = bounds.first.longitude;
-
-    for (var point in bounds) {
-      minLat = point.latitude < minLat ? point.latitude : minLat;
-      maxLat = point.latitude > maxLat ? point.latitude : maxLat;
-      minLng = point.longitude < minLng ? point.longitude : minLng;
-      maxLng = point.longitude > maxLng ? point.longitude : maxLng;
-    }
-
-    _mapController!.animateCamera(
-      CameraUpdate.newLatLngBounds(
-        LatLngBounds(
-          southwest: LatLng(minLat - 0.01, minLng - 0.01),
-          northeast: LatLng(maxLat + 0.01, maxLng + 0.01),
-        ),
-        100.0,
       ),
     );
   }
@@ -537,6 +426,31 @@ class _FilterButton extends StatelessWidget {
             fontWeight: FontWeight.w700,
             fontSize: 13,
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ZoomButton extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback onTap;
+
+  const _ZoomButton({required this.icon, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(8),
+      elevation: 4,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(8),
+        child: SizedBox(
+          width: 40,
+          height: 40,
+          child: Icon(icon, color: Colors.black),
         ),
       ),
     );

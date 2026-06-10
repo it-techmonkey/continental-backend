@@ -174,18 +174,13 @@ class AddPropertyRepository {
     }
 
     if (p.mode == PropertyMode.offPlan) {
-      common['emi'] = 15000; // placeholder
       if (p.agreementUrl != null) {
         common['offplan_agreement'] = p.agreementUrl;
-      } else {
-        common['offplan_agreement'] = 'https://example.com/offplan-agreement.pdf';
       }
     } else {
       common['rent'] = _toInt(p.rent);
       if (p.agreementUrl != null) {
         common['rental_agreement'] = p.agreementUrl;
-      } else {
-        common['rental_agreement'] = 'https://example.com/rental-agreement.pdf';
       }
     }
     return common;

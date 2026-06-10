@@ -5,10 +5,9 @@ class ApiConfig {
   // For Android emulator, use 10.0.2.2R
   // For physical device, use your Mac's IP address
   // static const String baseUrl = 'http://192.168.1.2:3500/api'; // For your local device
-  // static const String baseUrl = 'http://localhost:3500/api'; // For simulator
-  static const String baseUrl = 'https://continental-backend-ajnc.onrender.com/api'; // For production/sharing
-  // Google Maps/Places API key (used for autocomplete/location selection)
-  static const String googleMapsApiKey = 'AIzaSyAg1QBIXXbGLiNO26G6GvHQwmdJJ0usUV0';
+  static const String baseUrl = 'https://continental-backend-ajnc.onrender.com/api'; // Production
+  // MapTiler API key (used for map tiles and geocoding/autocomplete)
+  static const String mapTilerApiKey = 'OKU9MIforCd1dn2IReUX';
   // API EndpointsR
   
   static const String login = '/auth/login';
