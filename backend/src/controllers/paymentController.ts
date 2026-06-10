@@ -87,7 +87,7 @@ export class PaymentController {
             const filters = {
                 status: status as string | undefined,
                 property_type: property_type as 'Rental' | 'OffPlan' | undefined,
-                dedupe: dedupe === 'false' ? false : true,
+                dedupe: dedupe === 'true' ? true : false,
             };
 
             const result = await PaymentService.getAllPayments(filters);

@@ -1174,7 +1174,7 @@ class _LocationSearchFieldState extends State<_LocationSearchField> {
                     dense: true,
                     title: Text(s.description, style: const TextStyle(color: Colors.white)),
                     onTap: () async {
-                      final d = await _places.details(s.placeId);
+                      final d = await _places.details(s.placeId, lat: s.lat, lng: s.lng, name: s.description);
                       if (d != null){
                         setState(() { _controller.text = d.name; _suggestions = []; });
                         widget.onSelected(d.name, d.lat, d.lng);

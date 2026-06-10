@@ -104,7 +104,7 @@ export class PaymentService {
             }));
 
             let list = transformedPayments;
-            if (filters?.dedupe !== false) {
+            if (filters?.dedupe === true) {
                 const seen = new Set<number>();
                 list = transformedPayments.filter(p => {
                     if (p.occupantRecordId == null) return true;

@@ -4,6 +4,9 @@ import bcrypt from 'bcryptjs';
 const prisma = new PrismaClient();
 
 async function main() {
+    // WARNING: This seed file contains test data with weak passwords.
+    // Do NOT run this against production databases.
+    // Use `npm run db:seed` only in local/development environments.
     console.log('🌱 Starting seed process...');
 
     // Clear existing data (optional - commented out to preserve existing data)

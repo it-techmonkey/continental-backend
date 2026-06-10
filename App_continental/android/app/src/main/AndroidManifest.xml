@@ -1,5 +1,5 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- Location permissions for Google Maps -->
+    <!-- Location (optional; map uses OpenStreetMap tiles) -->
     <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
@@ -7,12 +7,8 @@
     <application
         android:label="continental"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
-        
-        <!-- Google Maps API Key -->
-        <meta-data
-            android:name="com.google.android.geo.API_KEY"
-            android:value="AIzaSyAg1QBIXXbGLiNO26G6GvHQwmdJJ0usUV0"/>
+        android:icon="@mipmap/ic_launcher"
+        android:networkSecurityConfig="@xml/network_security_config">
         
         <activity
             android:name=".MainActivity"

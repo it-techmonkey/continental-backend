@@ -4,7 +4,9 @@ import 'package:continental/config/api_config.dart';
 class PlaceSuggestion {
   final String description;
   final String placeId;
-  PlaceSuggestion(this.description, this.placeId);
+  final double lat;
+  final double lng;
+  PlaceSuggestion(this.description, this.placeId, {required this.lat, required this.lng});
 }
 
 class PlaceDetailsResult {
@@ -19,34 +21,34 @@ class PlacesService {
 
   Future<List<PlaceSuggestion>> autocomplete(String input) async {
     if (input.isEmpty) return [];
-    final url = 'https://maps.googleapis.com/maps/api/place/autocomplete/json';
+    final key = ApiConfig.mapTilerApiKey;
+    if (key.isEmpty) return [];
+
+    final url = 'https://api.maptiler.com/geocoding/$input.json';
     final res = await _dio.get(url, queryParameters: {
-      'input': input,
-      'key': ApiConfig.googleMapsApiKey,
-      'types': 'geocode',
-      'components': 'country:ae', // Restrict to UAE
+      'key': key,
+      'limit': 5,
+      'language': 'en',
+      'types': 'address,poi,street,place',
     });
-    final predictions = (res.data['predictions'] as List?) ?? [];
-    return predictions
-        .map((p) => PlaceSuggestion(p['description'], p['place_id']))
-        .toList();
+
+    final features = (res.data['features'] as List?) ?? [];
+    return features.map((f) {
+      final coords = f['geometry']['coordinates'];
+      final props = f['properties'];
+      return PlaceSuggestion(
+        props['label'] ?? props['name'] ?? f['text'] ?? input,
+        f['id'] ?? '',
+        lat: (coords[1] as num).toDouble(),
+        lng: (coords[0] as num).toDouble(),
+      );
+    }).toList();
   }
 
-  Future<PlaceDetailsResult?> details(String placeId) async {
-    final url = 'https://maps.googleapis.com/maps/api/place/details/json';
-    final res = await _dio.get(url, queryParameters: {
-      'place_id': placeId,
-      'key': ApiConfig.googleMapsApiKey,
-      'fields': 'name,geometry/location',
-    });
-    final r = res.data['result'];
-    if (r == null) return null;
-    final loc = r['geometry']['location'];
-    return PlaceDetailsResult(
-      name: r['name'],
-      lat: (loc['lat'] as num).toDouble(),
-      lng: (loc['lng'] as num).toDouble(),
-    );
+  /// MapTiler returns full details in the autocomplete response,
+  /// so this just wraps the data we already have.
+  Future<PlaceDetailsResult?> details(String placeId, {double? lat, double? lng, String? name}) async {
+    if (lat == null || lng == null || name == null) return null;
+    return PlaceDetailsResult(name: name, lat: lat, lng: lng);
   }
 }
-

@@ -8,9 +8,9 @@ const router = Router();
 /**
  * @route   POST /api/occupant-records
  * @desc    Create a new occupant record
- * @access  Public (can be changed to Private if needed)
+ * @access  Private (Admin only)
  */
-router.post('/', OccupantRecordController.createOccupantRecord);
+router.post('/', authenticate, isAdmin, OccupantRecordController.createOccupantRecord);
 
 /**
  * @route   GET /api/occupant-records
