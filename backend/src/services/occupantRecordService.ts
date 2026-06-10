@@ -648,11 +648,36 @@ export class OccupantRecordService {
                 },
             });
 
+            // GeoJSON-compatible features for clients expecting `properties` and `geometry`.
+            const features = records.map((record) => ({
+                type: 'Feature',
+                geometry: {
+                    type: 'Point',
+                    coordinates:
+                        record.longitude != null && record.latitude != null
+                            ? [record.longitude, record.latitude]
+                            : null,
+                },
+                properties: {
+                    id: record.id,
+                    developer_name: record.developer_name,
+                    property_name: record.property_name,
+                    price: record.price,
+                    image_url: record.image_url,
+                    property_type: record.property_type,
+                    location: record.location,
+                    longitude: record.longitude,
+                    latitude: record.latitude,
+                },
+            }));
+
             return {
                 success: true,
                 message: 'Occupant records for maps retrieved successfully',
                 data: {
                     records,
+                    features,
+                    type: 'FeatureCollection',
                     total: records.length,
                 },
             };

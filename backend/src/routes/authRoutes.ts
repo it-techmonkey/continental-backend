@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { AuthController } from '../controllers/authController';
 import { authenticate } from '../middleware/authMiddleware';
+import { authRateLimit } from '../middleware/rateLimiter';
 
 const router = Router();
 
@@ -9,14 +10,14 @@ const router = Router();
  * @desc    Register a new user
  * @access  Public
  */
-router.post('/signup', AuthController.signup);
+router.post('/signup', authRateLimit, AuthController.signup);
 
 /**
  * @route   POST /api/auth/login
  * @desc    Login user
  * @access  Public
  */
-router.post('/login', AuthController.login);
+router.post('/login', authRateLimit, AuthController.login);
 
 /**
  * @route   GET /api/auth/profile

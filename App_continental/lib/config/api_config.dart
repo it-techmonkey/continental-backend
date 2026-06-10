@@ -13,14 +13,12 @@ class ApiConfig {
   static const String login = '/auth/login';
   static const String signup = '/auth/signup';
   static const String occupantRecordsMaps = '/occupant-records/maps';
-  
-  // Headers
+
   static const Map<String, String> defaultHeaders = {
     'Content-Type': 'application/json',
     'Accept': 'application/json',
   };
-  
-  // Get authorization header with token
+
   static Map<String, String> getAuthHeaders(String? token) {
     final headers = Map<String, String>.from(defaultHeaders);
     if (token != null && token.isNotEmpty) {

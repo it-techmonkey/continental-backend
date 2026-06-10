@@ -8,6 +8,7 @@ import leadRoutes from './routes/leadRoutes';
 import occupantRecordRoutes from './routes/occupantRecordRoutes';
 import paymentRoutes from './routes/paymentRoutes';
 import uploadRoutes from './routes/uploadRoutes';
+import { apiRateLimit } from './middleware/rateLimiter';
 
 // Load environment variables
 dotenv.config();
@@ -59,7 +60,7 @@ app.get('/health', async (req: Request, res: Response) => {
 });
 
 // API routes
-app.get('/api', (req: Request, res: Response) => {
+app.get('/api', apiRateLimit, (req: Request, res: Response) => {
     res.json({
         message: 'Welcome to Continental Backend API',
         version: '1.0.0',
