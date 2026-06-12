@@ -33,7 +33,7 @@ class S3UploadService {
     bool allowMultiple = false,
   }) async {
     try {
-      final result = await FilePicker.platform.pickFiles(
+      final result = await FilePicker.pickFiles(
         type: FileType.custom,
         allowedExtensions: allowedExtensions,
         allowMultiple: allowMultiple,

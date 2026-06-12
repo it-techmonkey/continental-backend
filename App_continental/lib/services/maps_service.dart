@@ -11,13 +11,14 @@ class MapsService {
 
   MapsService(this._dio);
 
-  // Fetch property records for maps
-  Future<PropertyMapResponse> fetchPropertyRecords({String? filter, String? searchQuery}) async {
+  /// Fetch all property records (backend + bundled catalog), unfiltered.
+  /// Filtering by type/search is applied client-side by the provider layer.
+  Future<PropertyMapResponse> fetchPropertyRecords() async {
     try {
       debugPrint('🗺️ [MAPS] Fetching property records...');
-      
+
       debugPrint('📡 [MAPS] Request URL: ${ApiConfig.baseUrl}${ApiConfig.occupantRecordsMaps}');
-      
+
       // Token is automatically added by Dio interceptor
       final response = await _dio.get(
         ApiConfig.occupantRecordsMaps,
@@ -27,46 +28,26 @@ class MapsService {
 
       if (response.statusCode == 200 && response.data != null) {
         final apiResponse = PropertyMapResponse.fromJson(response.data);
-        final filteredData = _applyFilters(
-          apiResponse.data,
-          filter: filter,
-          searchQuery: searchQuery,
-        );
+        final apiData =
+            apiResponse.data ?? PropertyMapData(records: const [], total: 0);
+        final catalogData = await _loadCatalogFallback();
 
-        final catalogData = await _loadCatalogFallback(
-          filter: filter,
-          searchQuery: searchQuery,
-        );
-
-        // Fallback to bundled catalog only when API has no usable coordinates.
-        final hasValidApiCoords =
-            filteredData?.records.any((r) => r.hasValidCoordinates) ?? false;
-        if (!hasValidApiCoords) {
-          debugPrint(
-            '⚠️ [MAPS] API dataset has no valid coordinates. Using local catalog.',
-          );
-          return PropertyMapResponse(
-            success: true,
-            message: 'Loaded map records from local property catalog',
-            data: catalogData,
-          );
-        }
-
-        // Merge: show bundled JSON properties plus API rows (same id → API wins).
-        final merged = _mergeCatalogWithApi(
-          api: filteredData!,
-          catalog: catalogData,
+        // API records and catalog records come from unrelated ID spaces,
+        // so they are concatenated rather than merged by id.
+        final merged = PropertyMapData(
+          records: [...apiData.records, ...catalogData.records],
+          total: apiData.records.length + catalogData.records.length,
         );
 
         debugPrint(
-          '📊 [MAPS] API records: ${filteredData.records.length}, catalog: ${catalogData.records.length}, merged: ${merged.records.length}',
+          '📊 [MAPS] API records: ${apiData.records.length}, catalog: ${catalogData.records.length}, merged: ${merged.records.length}',
         );
         debugPrint(
           '📍 [MAPS] With valid coordinates: ${merged.records.where((r) => r.hasValidCoordinates).length}',
         );
 
         return PropertyMapResponse(
-          success: apiResponse.success,
+          success: true,
           message: apiResponse.message,
           data: merged,
         );
@@ -81,7 +62,7 @@ class MapsService {
     } on DioException catch (e) {
       debugPrint('❌ [MAPS] DioException: ${e.message}');
       debugPrint('📋 [MAPS] Error details: ${e.response?.data}');
-      final fallbackData = await _loadCatalogFallback(filter: filter, searchQuery: searchQuery);
+      final fallbackData = await _loadCatalogFallback();
       if (fallbackData.records.isNotEmpty) {
         return PropertyMapResponse(
           success: true,
@@ -96,7 +77,7 @@ class MapsService {
       );
     } catch (e) {
       debugPrint('❌ [MAPS] Unexpected error: $e');
-      final fallbackData = await _loadCatalogFallback(filter: filter, searchQuery: searchQuery);
+      final fallbackData = await _loadCatalogFallback();
       if (fallbackData.records.isNotEmpty) {
         return PropertyMapResponse(
           success: true,
@@ -112,58 +93,17 @@ class MapsService {
     }
   }
 
-  /// Same [id]: prefer API record; include catalog-only ids; append API rows without id.
-  PropertyMapData _mergeCatalogWithApi({
-    required PropertyMapData api,
-    required PropertyMapData catalog,
-  }) {
-    final byId = <int, PropertyRecord>{};
-
-    for (final r in catalog.records) {
-      if (r.id != null) {
-        byId[r.id!] = r;
-      }
-    }
-
-    for (final r in api.records) {
-      if (r.id != null) {
-        byId[r.id!] = r;
-      }
-    }
-
-    final extra = <PropertyRecord>[];
-    for (final r in api.records) {
-      if (r.id == null && r.hasValidCoordinates) {
-        extra.add(r);
-      }
-    }
-    for (final r in catalog.records) {
-      if (r.id == null && r.hasValidCoordinates) {
-        extra.add(r);
-      }
-    }
-
-    return PropertyMapData(
-      records: [...byId.values, ...extra],
-      total: byId.length + extra.length,
-    );
-  }
-
-  PropertyMapData? _applyFilters(
-    PropertyMapData? data, {
+  /// Client-side filtering by property type and search query.
+  static PropertyMapData applyFilters(
+    PropertyMapData data, {
     String? filter,
     String? searchQuery,
   }) {
-    if (data == null) return null;
-
     List<PropertyRecord> filteredRecords = data.records;
-    debugPrint('📊 [MAPS] Total records before filter: ${filteredRecords.length}');
-    debugPrint('📊 [MAPS] Property types: ${filteredRecords.map((r) => r.propertyType).toSet().toList()}');
-    debugPrint('📊 [MAPS] Applying filter: $filter');
 
     if (filter != null && filter != 'All') {
-      filteredRecords = filteredRecords.where((record) => record.matchesFilter(filter)).toList();
-      debugPrint('🔍 [MAPS] Filtered to ${filteredRecords.length} $filter properties');
+      filteredRecords =
+          filteredRecords.where((record) => record.matchesFilter(filter)).toList();
     }
 
     if (searchQuery != null && searchQuery.isNotEmpty) {
@@ -171,9 +111,9 @@ class MapsService {
       filteredRecords = filteredRecords
           .where((record) =>
               record.propertyName.toLowerCase().contains(query) ||
-              record.developerName.toLowerCase().contains(query))
+              record.developerName.toLowerCase().contains(query) ||
+              record.location.toLowerCase().contains(query))
           .toList();
-      debugPrint('🔍 [MAPS] Filtered to ${filteredRecords.length} properties matching "$searchQuery"');
     }
 
     return PropertyMapData(
@@ -182,7 +122,7 @@ class MapsService {
     );
   }
 
-  Future<PropertyMapData> _loadCatalogFallback({String? filter, String? searchQuery}) async {
+  Future<PropertyMapData> _loadCatalogFallback() async {
     const candidatePaths = <String>[
       'data/all_data_uae_en.json',
       'assets/data/all_data_uae_en.json',
@@ -203,14 +143,8 @@ class MapsService {
             .where((record) => record.hasValidCoordinates)
             .toList();
 
-        final filtered = _applyFilters(
-          PropertyMapData(records: records, total: records.length),
-          filter: filter,
-          searchQuery: searchQuery,
-        );
-
-        debugPrint('📦 [MAPS] Loaded local catalog from $path with ${filtered?.records.length ?? 0} map records');
-        return filtered ?? PropertyMapData(records: const [], total: 0);
+        debugPrint('📦 [MAPS] Loaded local catalog from $path with ${records.length} map records');
+        return PropertyMapData(records: records, total: records.length);
       } catch (e) {
         lastError = e;
       }
@@ -220,4 +154,3 @@ class MapsService {
     return PropertyMapData(records: const [], total: 0);
   }
 }
-

@@ -9,6 +9,8 @@ import 'package:continental/feature/onBoarding/onboarding_screen.dart';
 import 'package:continental/feature/onBoarding/splashScreen.dart';
 import 'package:continental/feature/portfolio/addProperty/addPropertyScreen.dart';
 import 'package:continental/widget/bottonNavBar.dart';
+import 'package:continental/feature/catalog/catalog_property_screen.dart';
+import 'package:continental/models/property_map_model.dart';
 import 'package:continental/providers/auth_state_provider.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter/material.dart';
@@ -115,6 +117,31 @@ final routerProvider = Provider<GoRouter>((ref) {
                 },
               ),
             ],
+          ),
+
+          GoRoute(
+            path: 'catalog-details',
+            name: 'catalog-details',
+            builder: (BuildContext context, GoRouterState state) {
+              final record = state.extra;
+              if (record is! PropertyRecord) {
+                // Reached without a record (e.g. deep link) — nothing to show.
+                return Scaffold(
+                  backgroundColor: Colors.black,
+                  appBar: AppBar(
+                    backgroundColor: Colors.black,
+                    foregroundColor: Colors.white,
+                  ),
+                  body: const Center(
+                    child: Text(
+                      'Property not found',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  ),
+                );
+              }
+              return CatalogPropertyScreen(record: record);
+            },
           ),
 
           GoRoute(

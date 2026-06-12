@@ -13,7 +13,7 @@ final mapsServiceProvider = Provider<MapsService>((ref) {
 class MapsFilterNotifier extends Notifier<String> {
   @override
   String build() => 'All';
-  
+
   void setFilter(String filter) {
     state = filter;
   }
@@ -23,15 +23,15 @@ final mapsFilterProvider = NotifierProvider<MapsFilterNotifier, String>(() {
   return MapsFilterNotifier();
 });
 
-// Search Query Notifier
+// Search Query Notifier (set by the UI after debouncing)
 class MapsSearchNotifier extends Notifier<String> {
   @override
   String build() => '';
-  
+
   void setSearch(String query) {
     state = query;
   }
-  
+
   void clearSearch() {
     state = '';
   }
@@ -41,16 +41,32 @@ final mapsSearchProvider = NotifierProvider<MapsSearchNotifier, String>(() {
   return MapsSearchNotifier();
 });
 
-// Maps Data Provider - now depends on both filter and search
-final mapsDataProvider = FutureProvider<PropertyMapData?>((ref) async {
-  final filter = ref.watch(mapsFilterProvider);
-  final searchQuery = ref.watch(mapsSearchProvider);
+/// Fetches all records once (backend + bundled catalog). Does NOT depend on
+/// filter/search, so typing or switching filters never re-hits the network.
+final mapsRawDataProvider = FutureProvider<PropertyMapData>((ref) async {
   final mapsService = ref.read(mapsServiceProvider);
-  final response = await mapsService.fetchPropertyRecords(filter: filter, searchQuery: searchQuery);
-  
+  final response = await mapsService.fetchPropertyRecords();
+
   if (response.success && response.data != null) {
-    return response.data;
+    return response.data!;
   }
-  return null;
+  throw Exception(response.message.isNotEmpty
+      ? response.message
+      : 'Failed to load properties');
 });
 
+/// Filtered view of the raw data — recomputed in memory when the filter or
+/// (debounced) search query changes.
+final mapsDataProvider = Provider<AsyncValue<PropertyMapData>>((ref) {
+  final filter = ref.watch(mapsFilterProvider);
+  final searchQuery = ref.watch(mapsSearchProvider);
+  final rawAsync = ref.watch(mapsRawDataProvider);
+
+  return rawAsync.whenData(
+    (data) => MapsService.applyFilters(
+      data,
+      filter: filter,
+      searchQuery: searchQuery,
+    ),
+  );
+});

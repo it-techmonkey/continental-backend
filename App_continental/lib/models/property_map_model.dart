@@ -58,29 +58,39 @@ class PropertyMapData {
   }
 }
 
+/// Where a map record came from: the backend API (user's own properties)
+/// or the bundled offline market catalog.
+enum PropertySource { api, catalog }
+
 class PropertyRecord {
   final int? id;
   final String developerName;
   final String propertyName;
   final num? price;
+  final num? priceFrom;
+  final num? priceTo;
   final String? imageUrl;
   final String propertyType; // "Rental" or "OffPlan"
   final String location;
   final double? longitude;
   final double? latitude;
   final Map<String, dynamic>? properties;
+  final PropertySource source;
 
   PropertyRecord({
     this.id,
     required this.developerName,
     required this.propertyName,
     this.price,
+    this.priceFrom,
+    this.priceTo,
     this.imageUrl,
     required this.propertyType,
     required this.location,
     this.longitude,
     this.latitude,
     this.properties,
+    this.source = PropertySource.api,
   });
 
   factory PropertyRecord.fromJson(Map<String, dynamic> json) {
@@ -146,11 +156,23 @@ class PropertyRecord {
     final typeRaw = item['property_type']?.toString().toLowerCase();
     final fallbackType = (typeRaw == 'rental') ? 'Rental' : 'OffPlan';
 
+    // Catalog items carry their price range in statistics.total
+    num? priceFrom;
+    num? priceTo;
+    final stats = item['statistics'];
+    if (stats is Map && stats['total'] is Map) {
+      final total = stats['total'] as Map;
+      if (total['price_from'] is num) priceFrom = total['price_from'] as num;
+      if (total['price_to'] is num) priceTo = total['price_to'] as num;
+    }
+
     return PropertyRecord(
       id: itemId is num ? itemId.toInt() : null,
       developerName: builder.isNotEmpty ? builder : 'Unknown Developer',
       propertyName: title.isNotEmpty ? title : (item['slug']?.toString() ?? 'Property'),
       price: item['price'] is num ? item['price'] as num : null,
+      priceFrom: priceFrom,
+      priceTo: priceTo,
       imageUrl: (item['cover'] is Map)
           ? (item['cover'] as Map)['src']?.toString()
           : item['image_url']?.toString(),
@@ -159,6 +181,7 @@ class PropertyRecord {
       longitude: lng,
       latitude: lat,
       properties: item,
+      source: PropertySource.catalog,
     );
   }
 

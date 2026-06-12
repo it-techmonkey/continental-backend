@@ -144,7 +144,76 @@ class CustomerDetailsScreen extends ConsumerWidget {
       backgroundColor: Colors.black,
       body: detailsAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (err, stack) => Center(child: Text('Error: $err', style: const TextStyle(color: Colors.red))),
+        error: (err, stack) {
+          final isNotFound =
+              err is DioException && err.response?.statusCode == 404;
+          return SafeArea(
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      isNotFound ? Icons.search_off : Icons.cloud_off,
+                      color: Colors.redAccent,
+                      size: 48,
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      isNotFound
+                          ? translate('Property not found')
+                          : translate('Could not load property details'),
+                      style: GoogleFonts.inter(
+                        color: Colors.white,
+                        fontSize: 17,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      isNotFound
+                          ? translate(
+                              'This property is no longer available or does not exist.')
+                          : translate(
+                              'Please check your connection and try again.'),
+                      style: GoogleFonts.inter(color: Colors.grey),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 20),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        OutlinedButton(
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: Colors.white,
+                            side: const BorderSide(color: Colors.white54),
+                          ),
+                          onPressed: () => context.pop(),
+                          child: Text(translate('Go Back')),
+                        ),
+                        if (!isNotFound) ...[
+                          const SizedBox(width: 12),
+                          ElevatedButton.icon(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.yellow[700],
+                              foregroundColor: Colors.black,
+                            ),
+                            onPressed: () => ref.invalidate(
+                                customerDetailsProvider(itemId)),
+                            icon: const Icon(Icons.refresh),
+                            label: Text(translate('Retry')),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
         data: (details) => Stack(
           children: [
             // Main scrollable content

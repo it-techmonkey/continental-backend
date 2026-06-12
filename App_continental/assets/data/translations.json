@@ -406,6 +406,110 @@
   "Total Price": {
     "en": "Total Price",
     "fr": "Prix total"
+  },
+  "View Details": {
+    "en": "View Details",
+    "fr": "Voir les détails"
+  },
+  "My Property": {
+    "en": "My Property",
+    "fr": "Ma propriété"
+  },
+  "Market Listing": {
+    "en": "Market Listing",
+    "fr": "Annonce du marché"
+  },
+  "Could not load properties": {
+    "en": "Could not load properties",
+    "fr": "Impossible de charger les propriétés"
+  },
+  "Could not load property details": {
+    "en": "Could not load property details",
+    "fr": "Impossible de charger les détails de la propriété"
+  },
+  "Please check your connection and try again.": {
+    "en": "Please check your connection and try again.",
+    "fr": "Veuillez vérifier votre connexion et réessayer."
+  },
+  "Retry": {
+    "en": "Retry",
+    "fr": "Réessayer"
+  },
+  "Go Back": {
+    "en": "Go Back",
+    "fr": "Retour"
+  },
+  "Property not found": {
+    "en": "Property not found",
+    "fr": "Propriété introuvable"
+  },
+  "This property is no longer available or does not exist.": {
+    "en": "This property is no longer available or does not exist.",
+    "fr": "Cette propriété n'est plus disponible ou n'existe pas."
+  },
+  "Show all properties": {
+    "en": "Show all properties",
+    "fr": "Afficher toutes les propriétés"
+  },
+  "No properties match your search": {
+    "en": "No properties match your search",
+    "fr": "Aucune propriété ne correspond à votre recherche"
+  },
+  "By": {
+    "en": "By",
+    "fr": "Par"
+  },
+  "Price Range": {
+    "en": "Price Range",
+    "fr": "Fourchette de prix"
+  },
+  "Construction": {
+    "en": "Construction",
+    "fr": "Construction"
+  },
+  "Estimated completion": {
+    "en": "Estimated completion",
+    "fr": "Achèvement estimé"
+  },
+  "Project Overview": {
+    "en": "Project Overview",
+    "fr": "Aperçu du projet"
+  },
+  "Total Units": {
+    "en": "Total Units",
+    "fr": "Nombre total d'unités"
+  },
+  "Available Units": {
+    "en": "Available Units",
+    "fr": "Unités disponibles"
+  },
+  "Floors": {
+    "en": "Floors",
+    "fr": "Étages"
+  },
+  "Price per m²": {
+    "en": "Price per m²",
+    "fr": "Prix au m²"
+  },
+  "Available Unit Types": {
+    "en": "Available Unit Types",
+    "fr": "Types d'unités disponibles"
+  },
+  "Studio": {
+    "en": "Studio",
+    "fr": "Studio"
+  },
+  "Bedroom": {
+    "en": "Bedroom",
+    "fr": "Chambre"
+  },
+  "Bedrooms": {
+    "en": "Bedrooms",
+    "fr": "Chambres"
+  },
+  "from": {
+    "en": "from",
+    "fr": "à partir de"
   }
 }
 
