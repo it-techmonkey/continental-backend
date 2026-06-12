@@ -32,16 +32,11 @@
 		<false/>
 		<key>NSExceptionDomains</key>
 		<dict>
-<<<<<<< HEAD
-			<key>NSAllowsArbitraryLoads</key>
-			<false/>
-=======
 			<key>localhost</key>
 			<dict>
 				<key>NSExceptionAllowsInsecureHTTPLoads</key>
 				<true/>
 			</dict>
->>>>>>> c14408e5705485031c108f9aea79c6a63a6af60b
 		</dict>
 	</dict>
 	<key>NSCameraUsageDescription</key>
