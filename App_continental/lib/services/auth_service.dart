@@ -17,11 +17,16 @@ class ApiResponse<T> {
     this.statusCode,
   });
 
-  factory ApiResponse.fromJson(Map<String, dynamic> json, T Function(dynamic)? fromJson) {
+  factory ApiResponse.fromJson(
+    Map<String, dynamic> json,
+    T Function(dynamic)? fromJson,
+  ) {
     return ApiResponse<T>(
       success: json['success'] ?? false,
       message: json['message'] ?? '',
-      data: json['data'] != null && fromJson != null ? fromJson(json['data']) : null,
+      data: json['data'] != null && fromJson != null
+          ? fromJson(json['data'])
+          : null,
       statusCode: 200,
     );
   }
@@ -56,7 +61,9 @@ class User {
 
   factory User.fromJson(Map<String, dynamic> json) {
     return User(
-      id: json['id'] is int ? json['id'] : (json['id'] is String ? int.tryParse(json['id']) ?? 0 : 0),
+      id: json['id'] is int
+          ? json['id']
+          : (json['id'] is String ? int.tryParse(json['id']) ?? 0 : 0),
       email: json['email'] ?? '',
       name: json['name'] ?? '',
       role: json['role'] ?? '',
@@ -64,12 +71,7 @@ class User {
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'email': email,
-      'name': name,
-      'role': role,
-    };
+    return {'id': id, 'email': email, 'name': name, 'role': role};
   }
 }
 
@@ -80,10 +82,7 @@ class LoginRequest {
   LoginRequest({required this.email, required this.password});
 
   Map<String, dynamic> toJson() {
-    return {
-      'email': email,
-      'password': password,
-    };
+    return {'email': email, 'password': password};
   }
 }
 
@@ -106,23 +105,28 @@ class AuthService {
   static Future<void> warmUpServer() async {
     try {
       final dio = Dio();
-      dio.options.connectTimeout = const Duration(seconds: 90);
-      dio.options.receiveTimeout = const Duration(seconds: 90);
+      dio.options.connectTimeout = const Duration(seconds: 120);
+      dio.options.receiveTimeout = const Duration(seconds: 120);
       final healthUrl = ApiConfig.baseUrl.replaceAll('/api', '/health');
       debugPrint('🔥 [WARMUP] Pinging server: $healthUrl');
       await dio.get(healthUrl);
       debugPrint('🔥 [WARMUP] Server is awake');
     } catch (e) {
-      debugPrint('⚠️ [WARMUP] Server warmup failed (may still be starting): $e');
+      debugPrint(
+        '⚠️ [WARMUP] Server warmup failed (may still be starting): $e',
+      );
     }
   }
 
   // Login
-  Future<ApiResponse<LoginResponse>> login(String email, String password) async {
+  Future<ApiResponse<LoginResponse>> login(
+    String email,
+    String password,
+  ) async {
     try {
       final normalizedEmail = email.trim().toLowerCase();
       debugPrint('🔐 [LOGIN] Starting login for: $normalizedEmail');
-      
+
       // Validate inputs
       if (normalizedEmail.isEmpty || password.isEmpty) {
         debugPrint('❌ [LOGIN] Email or password empty');
@@ -134,28 +138,27 @@ class AuthService {
       }
 
       final request = LoginRequest(email: normalizedEmail, password: password);
-      debugPrint('📡 [LOGIN] Sending request to: ${ApiConfig.baseUrl}${ApiConfig.login}');
+      debugPrint(
+        '📡 [LOGIN] Sending request to: ${ApiConfig.baseUrl}${ApiConfig.login}',
+      );
       debugPrint('📋 [LOGIN] Request data: ${request.toJson()}');
-      
+
       Response<dynamic> response;
       try {
-        response = await _dio.post(
-          ApiConfig.login,
-          data: request.toJson(),
-        );
+        response = await _dio.post(ApiConfig.login, data: request.toJson());
       } on DioException catch (e) {
-        final shouldRetry = e.type == DioExceptionType.connectionTimeout ||
+        final shouldRetry =
+            e.type == DioExceptionType.connectionTimeout ||
             e.type == DioExceptionType.receiveTimeout ||
             e.type == DioExceptionType.connectionError;
         if (!shouldRetry) rethrow;
 
         // Retry once after warmup for Render cold starts.
-        debugPrint('⚠️ [LOGIN] Initial attempt failed (${e.type}). Warming up server and retrying once...');
-        await warmUpServer();
-        response = await _dio.post(
-          ApiConfig.login,
-          data: request.toJson(),
+        debugPrint(
+          '⚠️ [LOGIN] Initial attempt failed (${e.type}). Warming up server and retrying once...',
         );
+        await warmUpServer();
+        response = await _dio.post(ApiConfig.login, data: request.toJson());
       }
 
       debugPrint('✅ [LOGIN] Response status: ${response.statusCode}');
@@ -169,11 +172,15 @@ class AuthService {
 
         // Save token if login successful
         if (apiResponse.success && apiResponse.data?.token != null) {
-          debugPrint('💾 [LOGIN] Saving token: ${apiResponse.data!.token!.substring(0, 20)}...');
+          debugPrint(
+            '💾 [LOGIN] Saving token: ${apiResponse.data!.token!.substring(0, 20)}...',
+          );
           await _tokenStorage.saveToken(apiResponse.data!.token!);
           await _tokenStorage.saveUser(apiResponse.data!.user);
           debugPrint('✅ [LOGIN] Token saved successfully!');
-          debugPrint('👤 [LOGIN] User: ${apiResponse.data!.user?.name} (${apiResponse.data!.user?.email})');
+          debugPrint(
+            '👤 [LOGIN] User: ${apiResponse.data!.user?.name} (${apiResponse.data!.user?.email})',
+          );
         }
 
         return apiResponse;
@@ -243,8 +250,9 @@ class AuthService {
     if (error.response != null) {
       // Server responded with error
       final statusCode = error.response!.statusCode;
-      final message = error.response!.data?['message'] ?? 'Server error occurred';
-      
+      final message =
+          error.response!.data?['message'] ?? 'Server error occurred';
+
       return ApiResponse<T>(
         success: false,
         message: message,
@@ -252,7 +260,7 @@ class AuthService {
         statusCode: statusCode,
       );
     } else if (error.type == DioExceptionType.connectionTimeout ||
-               error.type == DioExceptionType.receiveTimeout) {
+        error.type == DioExceptionType.receiveTimeout) {
       return ApiResponse<T>(
         success: false,
         message: 'Connection timeout. Please check your internet connection.',
@@ -261,7 +269,8 @@ class AuthService {
     } else if (error.type == DioExceptionType.connectionError) {
       return ApiResponse<T>(
         success: false,
-        message: 'Unable to connect to server. Please check your internet connection.',
+        message:
+            'Unable to connect to server. Please check your internet connection.',
         data: null,
       );
     } else {
@@ -273,4 +282,3 @@ class AuthService {
     }
   }
 }
-

@@ -4,13 +4,19 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'actionable_provider.dart'; // Import our models and filter provider
 import 'package:continental/services/payments_service.dart';
 import 'package:continental/services/occupants_service.dart';
+import 'package:continental/services/dio_service.dart';
 import 'package:intl/intl.dart';
 
 class ActionableRepository {
-  final PaymentsService _paymentsService = PaymentsService();
-  final OccupantsService _occupantsService = OccupantsService();
+  final PaymentsService _paymentsService;
+  final OccupantsService _occupantsService;
 
-  Future<List<ActionableItem>> fetchActionableItems({required String filter, String searchQuery = ''}) async {
+  ActionableRepository(this._paymentsService, this._occupantsService);
+
+  Future<List<ActionableItem>> fetchActionableItems({
+    required String filter,
+    String searchQuery = '',
+  }) async {
     // Map filter to property_type for backend
     String? propertyTypeFilter;
     if (filter == 'Rental') {
@@ -19,70 +25,85 @@ class ActionableRepository {
       propertyTypeFilter = 'OffPlan';
     }
     // If filter is 'All', propertyTypeFilter remains null to fetch all properties
-    
-    
+
     // Fetch all occupant records (properties) instead of filtering by payments
-    final occupants = await _occupantsService.fetchAllOccupantRecords(propertyType: propertyTypeFilter);
-    
+    final occupants = await _occupantsService.fetchAllOccupantRecords(
+      propertyType: propertyTypeFilter,
+    );
+
     // Calculate status and pending amount for each property
-    final items = await Future.wait(occupants.map((occupant) async {
-      // Get all payments for this occupant
-      final allOccupantPayments = await _paymentsService.fetchPaymentsByOccupant(occupant.id);
-      
-      // Calculate total amount for due/overdue installments (exclude paid)
-      num pendingAmount = 0;
-      String calculatedStatus = 'due';
-      
-      if (allOccupantPayments.isNotEmpty) {
-        // Calculate pending amount
-        pendingAmount = allOccupantPayments.fold<num>(0, (sum, p) {
-          final status = p.status.toLowerCase();
-          // Exclude paid payments
-          if (status == 'paid') return sum;
-          
-          // Count all unpaid payments (due or overdue), regardless of date
-          // For off-plan properties with empty payments, amount will be 0
-          final amount = p.rent ?? p.emi ?? 0;
-          return sum + amount;
-        });
-        
-        // Calculate status from first unpaid payment (or first payment if all are paid)
-        final unpaidPayments = allOccupantPayments.where((p) => p.status.toLowerCase() != 'paid').toList();
-        if (unpaidPayments.isNotEmpty) {
-          calculatedStatus = await _calculatePaymentStatus(unpaidPayments.first);
+    final items = await Future.wait(
+      occupants.map((occupant) async {
+        // Get all payments for this occupant
+        final allOccupantPayments = await _paymentsService
+            .fetchPaymentsByOccupant(occupant.id);
+
+        // Calculate total amount for due/overdue installments (exclude paid)
+        num pendingAmount = 0;
+        String calculatedStatus = 'due';
+
+        if (allOccupantPayments.isNotEmpty) {
+          // Calculate pending amount
+          pendingAmount = allOccupantPayments.fold<num>(0, (sum, p) {
+            final status = p.status.toLowerCase();
+            // Exclude paid payments
+            if (status == 'paid') return sum;
+
+            // Count all unpaid payments (due or overdue), regardless of date
+            // For off-plan properties with empty payments, amount will be 0
+            final amount = p.rent ?? p.emi ?? 0;
+            return sum + amount;
+          });
+
+          // Calculate status from first unpaid payment (or first payment if all are paid)
+          final unpaidPayments = allOccupantPayments
+              .where((p) => p.status.toLowerCase() != 'paid')
+              .toList();
+          if (unpaidPayments.isNotEmpty) {
+            calculatedStatus = await _calculatePaymentStatus(
+              unpaidPayments.first,
+            );
+          } else {
+            // All payments are paid
+            calculatedStatus = 'paid';
+          }
         } else {
-          // All payments are paid
-          calculatedStatus = 'paid';
+          // No payments yet - default to 'due' for new properties
+          calculatedStatus = 'due';
         }
-      } else {
-        // No payments yet - default to 'due' for new properties
-        calculatedStatus = 'due';
-      }
-      
-      // Format amount as currency
-      final currency = NumberFormat.currency(locale: 'en_US', symbol: 'AED ', decimalDigits: 0);
-      
-      return ActionableItem(
-        id: occupant.id,
-        propertyName: occupant.propertyName,
-        name: occupant.name,
-        installmentsPending: pendingAmount > 0 ? currency.format(pendingAmount) : 'AED 0',
-        status: calculatedStatus,
-        type: occupant.propertyType.toLowerCase() == 'offplan' ? ItemType.offPlan : ItemType.rental,
-      );
-    }));
-    
-    
+
+        // Format amount as currency
+        final currency = NumberFormat.currency(
+          locale: 'en_US',
+          symbol: 'AED ',
+          decimalDigits: 0,
+        );
+
+        return ActionableItem(
+          id: occupant.id,
+          propertyName: occupant.propertyName,
+          name: occupant.name,
+          installmentsPending: pendingAmount > 0
+              ? currency.format(pendingAmount)
+              : 'AED 0',
+          status: calculatedStatus,
+          type: occupant.propertyType.toLowerCase() == 'offplan'
+              ? ItemType.offPlan
+              : ItemType.rental,
+        );
+      }),
+    );
+
     // Apply search filter if search query is provided
     if (searchQuery.isNotEmpty) {
       final query = searchQuery.toLowerCase();
       final filteredItems = items.where((item) {
         return item.propertyName.toLowerCase().contains(query) ||
-               item.name.toLowerCase().contains(query);
+            item.name.toLowerCase().contains(query);
       }).toList();
       return filteredItems;
     }
-    
+
     return items;
   }
 
@@ -102,11 +123,14 @@ class ActionableRepository {
     }
 
     // If status is "due", check previous months
-    if (payment.status.toLowerCase() == 'due' && payment.occupantRecordId != null) {
+    if (payment.status.toLowerCase() == 'due' &&
+        payment.occupantRecordId != null) {
       try {
         // Fetch all payments for this occupant
-        final allPayments = await _paymentsService.fetchPaymentsByOccupant(payment.occupantRecordId!);
-        
+        final allPayments = await _paymentsService.fetchPaymentsByOccupant(
+          payment.occupantRecordId!,
+        );
+
         if (allPayments.isEmpty) return 'due';
 
         final now = DateTime.now();
@@ -127,8 +151,10 @@ class ActionableRepository {
         // Check if current month payment date has passed
         bool currentMonthPassed = false;
         if (currentPaymentDate != null) {
-          currentMonthPassed = currentPaymentDate.isBefore(now) || 
-                              (currentPaymentDate.year == currentYear && currentPaymentDate.month < currentMonth);
+          currentMonthPassed =
+              currentPaymentDate.isBefore(now) ||
+              (currentPaymentDate.year == currentYear &&
+                  currentPaymentDate.month < currentMonth);
         }
 
         if (!currentMonthPassed) {
@@ -139,14 +165,14 @@ class ActionableRepository {
         bool hasPreviousUnpaid = false;
         for (var p in allPayments) {
           if (p.id == payment.id) continue; // Skip current payment
-          
+
           final status = p.status.toLowerCase();
           if (status != 'paid') {
             // Check if this payment is before current month (convert from UTC to local)
             if (p.paymentDate != null) {
               try {
                 final pDate = DateTime.parse(p.paymentDate!).toLocal();
-                if (pDate.year < currentYear || 
+                if (pDate.year < currentYear ||
                     (pDate.year == currentYear && pDate.month < currentMonth)) {
                   hasPreviousUnpaid = true;
                   break;
@@ -205,7 +231,9 @@ class ActionableRepository {
       amountPending: 'AED $pending',
       pdfFileName: isRental ? 'Rental Agreement' : 'Offplan Agreement',
       pdfFileSize: '',
-      agreementValidity: dto.completionDate != null ? 'Completion ${dto.completionDate}' : '',
+      agreementValidity: dto.completionDate != null
+          ? 'Completion ${dto.completionDate}'
+          : '',
       rentalAgreement: dto.rentalAgreement,
       offplanAgreement: dto.offplanAgreement,
       dld: dto.dld,
@@ -214,13 +242,16 @@ class ActionableRepository {
       penalties: dto.penalties,
     );
   }
-  
-  // Removed dummy fallback
 
+  // Removed dummy fallback
 }
 
 // --- Riverpod Providers ---
-final actionableRepoProvider = Provider((ref) => ActionableRepository());
+final actionableRepoProvider = Provider((ref) {
+  final paymentsService = ref.read(paymentsServiceProvider);
+  final occupantsService = ref.read(occupantsServiceProvider);
+  return ActionableRepository(paymentsService, occupantsService);
+});
 
 final actionableDataProvider = FutureProvider<List<ActionableItem>>((ref) {
   final filter = ref.watch(actionableFilterProvider);
@@ -229,11 +260,11 @@ final actionableDataProvider = FutureProvider<List<ActionableItem>>((ref) {
   return repo.fetchActionableItems(filter: filter, searchQuery: searchQuery);
 });
 // Payments timeline for an occupant
-final occupantPaymentsProvider = FutureProvider.family<List<PaymentItemDto>, int>((ref, occupantId) {
-  final svc = PaymentsService();
-  return svc.fetchPaymentsByOccupant(occupantId);
-});
-
+final occupantPaymentsProvider =
+    FutureProvider.family<List<PaymentItemDto>, int>((ref, occupantId) {
+      final svc = ref.read(paymentsServiceProvider);
+      return svc.fetchPaymentsByOccupant(occupantId);
+    });
 
 // lib/actionable_repository.dart
 // ... existing imports and code
@@ -265,23 +296,48 @@ class CustomerDetails {
   final int? penalties;
 
   const CustomerDetails({
-    required this.propertyName, required this.developerName, required this.imageUrl,
-    required this.tenantName, required this.phone, required this.installmentsPending, required this.propertyType,
-    this.locality, this.homeType, this.totalPrice, required this.status, required this.amountPaid, required this.amountPending,
-    required this.pdfFileName, required this.pdfFileSize, required this.agreementValidity,
-    this.rentalAgreement, this.offplanAgreement,
-    this.dld, this.quood, this.otherCharges, this.penalties,
+    required this.propertyName,
+    required this.developerName,
+    required this.imageUrl,
+    required this.tenantName,
+    required this.phone,
+    required this.installmentsPending,
+    required this.propertyType,
+    this.locality,
+    this.homeType,
+    this.totalPrice,
+    required this.status,
+    required this.amountPaid,
+    required this.amountPending,
+    required this.pdfFileName,
+    required this.pdfFileSize,
+    required this.agreementValidity,
+    this.rentalAgreement,
+    this.offplanAgreement,
+    this.dld,
+    this.quood,
+    this.otherCharges,
+    this.penalties,
   });
 
   factory CustomerDetails.fromJson(Map<String, dynamic> json) {
     return CustomerDetails(
-      propertyName: json['propertyName'], developerName: json['developerName'],
-      imageUrl: json['imageUrl'], tenantName: json['tenantName'],
+      propertyName: json['propertyName'],
+      developerName: json['developerName'],
+      imageUrl: json['imageUrl'],
+      tenantName: json['tenantName'],
       phone: json['phone'] ?? '', // Added phone parsing
-      installmentsPending: json['installmentsPending'], propertyType: json['propertyType'],
-      locality: json['locality'], homeType: json['homeType'], totalPrice: json['totalPrice'], status: json['status'], amountPaid: json['amountPaid'],
-      amountPending: json['amountPending'], pdfFileName: json['pdfFileName'],
-      pdfFileSize: json['pdfFileSize'], agreementValidity: json['agreementValidity'],
+      installmentsPending: json['installmentsPending'],
+      propertyType: json['propertyType'],
+      locality: json['locality'],
+      homeType: json['homeType'],
+      totalPrice: json['totalPrice'],
+      status: json['status'],
+      amountPaid: json['amountPaid'],
+      amountPending: json['amountPending'],
+      pdfFileName: json['pdfFileName'],
+      pdfFileSize: json['pdfFileSize'],
+      agreementValidity: json['agreementValidity'],
       rentalAgreement: json['rentalAgreement'],
       offplanAgreement: json['offplanAgreement'],
       dld: json['dld'],
@@ -292,8 +348,10 @@ class CustomerDetails {
   }
 }
 
-
-final customerDetailsProvider = FutureProvider.family<CustomerDetails, String>((ref, itemId) {
+final customerDetailsProvider = FutureProvider.family<CustomerDetails, String>((
+  ref,
+  itemId,
+) {
   final repo = ref.watch(actionableRepoProvider);
   return repo.fetchItemDetails(itemId: itemId);
 });

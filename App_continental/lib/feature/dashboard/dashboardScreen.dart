@@ -132,10 +132,17 @@ class _DashboardscreenState extends ConsumerState<Dashboardscreen> {
   }
 
   Future<ui.Image> _getOrBuildIcon(
-      String key, String label, Color border, bool selected) async {
+    String key,
+    String label,
+    Color border,
+    bool selected,
+  ) async {
     if (_iconCache.containsKey(key)) return _iconCache[key]!;
     final img = await _renderMarkerImage(
-        text: label, border: border, selected: selected);
+      text: label,
+      border: border,
+      selected: selected,
+    );
     _iconCache[key] = img;
     return img;
   }
@@ -321,8 +328,29 @@ class _DashboardscreenState extends ConsumerState<Dashboardscreen> {
             // ── Map ─────────────────────────────────────────────────────
             Expanded(
               child: mapsDataAsync.when(
-                loading: () => const Center(
-                  child: CircularProgressIndicator(color: Colors.yellow),
+                loading: () => Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const CircularProgressIndicator(color: Colors.yellow),
+                      const SizedBox(height: 16),
+                      Text(
+                        t('Waking up server...'),
+                        style: GoogleFonts.inter(
+                          color: Colors.grey[400],
+                          fontSize: 13,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        t('This may take a moment on first launch'),
+                        style: GoogleFonts.inter(
+                          color: Colors.grey[600],
+                          fontSize: 11,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
                 error: (err, _) => Center(
                   child: Padding(
@@ -330,15 +358,19 @@ class _DashboardscreenState extends ConsumerState<Dashboardscreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(Icons.cloud_off,
-                            color: Colors.redAccent, size: 48),
+                        const Icon(
+                          Icons.cloud_off,
+                          color: Colors.redAccent,
+                          size: 48,
+                        ),
                         const SizedBox(height: 16),
                         Text(
                           t('Could not load properties'),
                           style: GoogleFonts.inter(
-                              color: Colors.white,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600),
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                         const SizedBox(height: 8),
                         Text(
@@ -366,8 +398,10 @@ class _DashboardscreenState extends ConsumerState<Dashboardscreen> {
                       .toList();
 
                   final initialCenter = validRecords.isNotEmpty
-                      ? LatLng(validRecords.first.latitude!,
-                          validRecords.first.longitude!)
+                      ? LatLng(
+                          validRecords.first.latitude!,
+                          validRecords.first.longitude!,
+                        )
                       : _dubaiCenter;
 
                   return Stack(
@@ -399,8 +433,7 @@ class _DashboardscreenState extends ConsumerState<Dashboardscreen> {
                           // Property markers
                           MarkerLayer(
                             markers: validRecords.map((record) {
-                              final isApi =
-                                  record.source == PropertySource.api;
+                              final isApi = record.source == PropertySource.api;
                               final label = record.developerName.isNotEmpty
                                   ? _extractLabel(record.developerName)
                                   : _extractLabel(record.propertyName);
@@ -415,19 +448,25 @@ class _DashboardscreenState extends ConsumerState<Dashboardscreen> {
                               final size = selected
                                   ? 84.0
                                   : isApi
-                                      ? 72.0
-                                      : 56.0;
+                                  ? 72.0
+                                  : 56.0;
 
                               return Marker(
                                 point: LatLng(
-                                    record.latitude!, record.longitude!),
+                                  record.latitude!,
+                                  record.longitude!,
+                                ),
                                 width: size,
                                 height: size,
                                 child: GestureDetector(
                                   onTap: () => _onMarkerTap(record, key),
                                   child: FutureBuilder<ui.Image>(
                                     future: _getOrBuildIcon(
-                                        cacheKey, label, border, selected),
+                                      cacheKey,
+                                      label,
+                                      border,
+                                      selected,
+                                    ),
                                     builder: (context, snap) {
                                       if (!snap.hasData) {
                                         return Container(
@@ -437,8 +476,9 @@ class _DashboardscreenState extends ConsumerState<Dashboardscreen> {
                                             color: border,
                                             shape: BoxShape.circle,
                                             border: Border.all(
-                                                color: Colors.white,
-                                                width: 2),
+                                              color: Colors.white,
+                                              width: 2,
+                                            ),
                                           ),
                                         );
                                       }
@@ -491,7 +531,9 @@ class _DashboardscreenState extends ConsumerState<Dashboardscreen> {
                         Center(
                           child: Container(
                             padding: const EdgeInsets.symmetric(
-                                horizontal: 20, vertical: 12),
+                              horizontal: 20,
+                              vertical: 12,
+                            ),
                             decoration: BoxDecoration(
                               color: Colors.black87,
                               borderRadius: BorderRadius.circular(12),
@@ -531,8 +573,7 @@ class _PropertySheet extends StatelessWidget {
     final isApi = record.source == PropertySource.api;
     final isRental = record.propertyType.toLowerCase() == 'rental';
     final price = formatPrice(record);
-    final imageUrl =
-        record.mapImageUrl?.replaceFirst('http://', 'https://');
+    final imageUrl = record.mapImageUrl?.replaceFirst('http://', 'https://');
 
     return SafeArea(
       child: Padding(
@@ -564,8 +605,11 @@ class _PropertySheet extends StatelessWidget {
                     height: 100,
                     color: Colors.grey[900],
                     child: const Center(
-                      child: Icon(Icons.apartment,
-                          color: Colors.grey, size: 40),
+                      child: Icon(
+                        Icons.apartment,
+                        color: Colors.grey,
+                        size: 40,
+                      ),
                     ),
                   ),
                 ),
@@ -614,14 +658,19 @@ class _PropertySheet extends StatelessWidget {
             if (record.location.isNotEmpty)
               Row(
                 children: [
-                  Icon(Icons.location_on_outlined,
-                      color: Colors.grey[400], size: 18),
+                  Icon(
+                    Icons.location_on_outlined,
+                    color: Colors.grey[400],
+                    size: 18,
+                  ),
                   const SizedBox(width: 6),
                   Expanded(
                     child: Text(
                       record.location,
                       style: GoogleFonts.inter(
-                          color: Colors.grey[300], fontSize: 14),
+                        color: Colors.grey[300],
+                        fontSize: 14,
+                      ),
                     ),
                   ),
                 ],
@@ -658,9 +707,10 @@ class _PropertySheet extends StatelessWidget {
                 onPressed: () {
                   Navigator.of(context).pop();
                   if (isApi && record.id != null) {
-                    context.pushNamed('details', pathParameters: {
-                      'itemId': record.id.toString(),
-                    });
+                    context.pushNamed(
+                      'details',
+                      pathParameters: {'itemId': record.id.toString()},
+                    );
                   } else {
                     context.pushNamed('catalog-details', extra: record);
                   }
@@ -668,7 +718,9 @@ class _PropertySheet extends StatelessWidget {
                 child: Text(
                   t('View Details'),
                   style: GoogleFonts.inter(
-                      fontWeight: FontWeight.w700, fontSize: 15),
+                    fontWeight: FontWeight.w700,
+                    fontSize: 15,
+                  ),
                 ),
               ),
             ),

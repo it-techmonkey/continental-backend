@@ -15,6 +15,7 @@ import 'package:continental/services/language_service.dart';
 import 'actionable_repository.dart'; // Import for the provider and model
 import 'package:continental/services/payments_service.dart';
 import 'package:continental/services/occupants_service.dart';
+import 'package:continental/services/dio_service.dart';
 import 'package:intl/intl.dart';
 import '../../widget/roi_graph_widget.dart';
 import '../../storage/token_storage.dart';
@@ -25,12 +26,19 @@ class CustomerDetailsScreen extends ConsumerWidget {
   const CustomerDetailsScreen({super.key, required this.itemId});
 
   // Helper method to open PDF files on Android/iOS
-  Future<void> _openPdfFile(BuildContext context, String pdfUrl, String Function(String) translate) async {
+  Future<void> _openPdfFile(
+    BuildContext context,
+    String pdfUrl,
+    String Function(String) translate,
+  ) async {
     try {
       // Ensure URL is absolute
       final uri = Uri.parse(pdfUrl);
-      final isAbsolute = uri.hasScheme && (uri.scheme == 'http' || uri.scheme == 'https');
-      final fullUrl = isAbsolute ? pdfUrl : '${ApiConfig.baseUrl.replaceAll('/api', '')}$pdfUrl';
+      final isAbsolute =
+          uri.hasScheme && (uri.scheme == 'http' || uri.scheme == 'https');
+      final fullUrl = isAbsolute
+          ? pdfUrl
+          : '${ApiConfig.baseUrl.replaceAll('/api', '')}$pdfUrl';
 
       // First, try to open directly with url_launcher (works for public S3 URLs)
       final directUri = Uri.parse(fullUrl);
@@ -61,8 +69,8 @@ class CustomerDetailsScreen extends ConsumerWidget {
         final tempDir = await getTemporaryDirectory();
         final fileName = fullUrl.split('/').last.split('?').first;
         // Ensure filename has .pdf extension if missing
-        final safeFileName = fileName.endsWith('.pdf') || fileName.contains('.') 
-            ? fileName 
+        final safeFileName = fileName.endsWith('.pdf') || fileName.contains('.')
+            ? fileName
             : '$fileName.pdf';
         final filePath = '${tempDir.path}/$safeFileName';
 
@@ -70,15 +78,18 @@ class CustomerDetailsScreen extends ConsumerWidget {
         final dio = Dio();
         final tokenStorage = TokenStorage();
         final token = await tokenStorage.getToken();
-        
+
         // Configure Dio options
         dio.options.followRedirects = true;
         dio.options.maxRedirects = 5;
         dio.options.connectTimeout = const Duration(seconds: 30);
         dio.options.receiveTimeout = const Duration(seconds: 30);
-        
+
         // Add authorization header if token exists and URL is not S3 (S3 URLs are usually public)
-        if (token != null && token.isNotEmpty && !fullUrl.contains('s3.amazonaws.com') && !fullUrl.contains('s3.')) {
+        if (token != null &&
+            token.isNotEmpty &&
+            !fullUrl.contains('s3.amazonaws.com') &&
+            !fullUrl.contains('s3.')) {
           dio.options.headers['Authorization'] = 'Bearer $token';
         }
 
@@ -87,12 +98,14 @@ class CustomerDetailsScreen extends ConsumerWidget {
 
         // Open the downloaded file
         final result = await OpenFilex.open(filePath);
-        
+
         if (context.mounted) {
           if (result.type != ResultType.done) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text(translate('Unable to open file: ${result.message}')),
+                content: Text(
+                  translate('Unable to open file: ${result.message}'),
+                ),
                 backgroundColor: Colors.red,
               ),
             );
@@ -138,7 +151,8 @@ class CustomerDetailsScreen extends ConsumerWidget {
     final occupantId = int.tryParse(itemId) ?? 0;
     final paymentsAsync = ref.watch(occupantPaymentsProvider(occupantId));
     final languageCode = ref.watch(languageProvider);
-    final translate = (String key) => LanguageService.translate(key, languageCode);
+    final translate = (String key) =>
+        LanguageService.translate(key, languageCode);
 
     return Scaffold(
       backgroundColor: Colors.black,
@@ -175,9 +189,11 @@ class CustomerDetailsScreen extends ConsumerWidget {
                     Text(
                       isNotFound
                           ? translate(
-                              'This property is no longer available or does not exist.')
+                              'This property is no longer available or does not exist.',
+                            )
                           : translate(
-                              'Please check your connection and try again.'),
+                              'Please check your connection and try again.',
+                            ),
                       style: GoogleFonts.inter(color: Colors.grey),
                       textAlign: TextAlign.center,
                     ),
@@ -200,8 +216,8 @@ class CustomerDetailsScreen extends ConsumerWidget {
                               backgroundColor: Colors.yellow[700],
                               foregroundColor: Colors.black,
                             ),
-                            onPressed: () => ref.invalidate(
-                                customerDetailsProvider(itemId)),
+                            onPressed: () =>
+                                ref.invalidate(customerDetailsProvider(itemId)),
                             icon: const Icon(Icons.refresh),
                             label: Text(translate('Retry')),
                           ),
@@ -221,87 +237,140 @@ class CustomerDetailsScreen extends ConsumerWidget {
               slivers: [
                 _buildSliverAppBar(context, details),
                 SliverList(
-                  delegate: SliverChildListDelegate(
-                    [
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 280.0), // Increased bottom padding for buttons and charges section
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            paymentsAsync.when(
-                              loading: () => _buildRentalDetailsSection(details, null, translate),
-                              error: (e, s) => _buildRentalDetailsSection(details, null, translate),
-                              data: (payments) => _buildRentalDetailsSection(details, payments, translate),
+                  delegate: SliverChildListDelegate([
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(
+                        16.0,
+                        16.0,
+                        16.0,
+                        280.0,
+                      ), // Increased bottom padding for buttons and charges section
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          paymentsAsync.when(
+                            loading: () => _buildRentalDetailsSection(
+                              details,
+                              null,
+                              translate,
                             ),
-                            const SizedBox(height: 30),
-                            _buildRentalAgreementSection(details, translate, context),
-                            const SizedBox(height: 24),
-                            // ROI Graph
-                            ROIGraphWidget(
-                              locality: details.locality,
+                            error: (e, s) => _buildRentalDetailsSection(
+                              details,
+                              null,
+                              translate,
                             ),
-                            const SizedBox(height: 24),
-                            // Payment Summary after Rental Agreement
-                            paymentsAsync.when(
-                              loading: () => const SizedBox(),
-                              error: (e, s) => const SizedBox(),
-                              data: (payments) => _buildPaymentSummaryTop(payments, details, translate),
+                            data: (payments) => _buildRentalDetailsSection(
+                              details,
+                              payments,
+                              translate,
                             ),
-                            const SizedBox(height: 24),
-                            paymentsAsync.when(
-                              loading: () => const Center(child: Padding(
+                          ),
+                          const SizedBox(height: 30),
+                          _buildRentalAgreementSection(
+                            details,
+                            translate,
+                            context,
+                          ),
+                          const SizedBox(height: 24),
+                          // ROI Graph
+                          ROIGraphWidget(locality: details.locality),
+                          const SizedBox(height: 24),
+                          // Payment Summary after Rental Agreement
+                          paymentsAsync.when(
+                            loading: () => const SizedBox(),
+                            error: (e, s) => const SizedBox(),
+                            data: (payments) => _buildPaymentSummaryTop(
+                              payments,
+                              details,
+                              translate,
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+                          paymentsAsync.when(
+                            loading: () => const Center(
+                              child: Padding(
                                 padding: EdgeInsets.symmetric(vertical: 20),
                                 child: CircularProgressIndicator(),
-                              )),
-                              error: (e, s) => Text('Failed to load payments', style: GoogleFonts.inter(color: Colors.redAccent)),
-                              data: (payments) {
-                                return Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(translate('Payment Timeline'), style: GoogleFonts.inter(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
-                                    const SizedBox(height: 12),
-                                    ...payments.asMap().entries.map((entry) => _TimelineRow(payment: entry.value, itemId: itemId, index: entry.key + 1, propertyDetails: details)).toList(),
-                                    const SizedBox(height: 24),
-                                    // Charges section in 2x2 grid
-                                    _buildChargesSection(details, translate),
-                                  ],
-                                );
-                              },
+                              ),
                             ),
-                          ],
-                        ),
+                            error: (e, s) => Text(
+                              'Failed to load payments',
+                              style: GoogleFonts.inter(color: Colors.redAccent),
+                            ),
+                            data: (payments) {
+                              return Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    translate('Payment Timeline'),
+                                    style: GoogleFonts.inter(
+                                      color: Colors.white,
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 12),
+                                  ...payments
+                                      .asMap()
+                                      .entries
+                                      .map(
+                                        (entry) => _TimelineRow(
+                                          payment: entry.value,
+                                          itemId: itemId,
+                                          index: entry.key + 1,
+                                          propertyDetails: details,
+                                        ),
+                                      )
+                                      .toList(),
+                                  const SizedBox(height: 24),
+                                  // Charges section in 2x2 grid
+                                  _buildChargesSection(details, translate),
+                                ],
+                              );
+                            },
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
+                    ),
+                  ]),
                 ),
               ],
             ),
             // Floating action buttons at the bottom
-            _buildActionButtons(details, translate),
+            _buildActionButtons(details, translate, ref),
           ],
         ),
       ),
     );
   }
 
-  SliverAppBar _buildSliverAppBar(BuildContext context, CustomerDetails details) {
+  SliverAppBar _buildSliverAppBar(
+    BuildContext context,
+    CustomerDetails details,
+  ) {
     return SliverAppBar(
       expandedHeight: 250.0,
       backgroundColor: Colors.black,
       pinned: true,
       leading: IconButton(
         icon: const Icon(Icons.arrow_back, color: Colors.white),
-        onPressed: (){ Navigator.of(context).maybePop(); },
+        onPressed: () {
+          Navigator.of(context).maybePop();
+        },
       ),
-      title: Text('Details', style: GoogleFonts.inter( color: Colors.white)),
+      title: Text('Details', style: GoogleFonts.inter(color: Colors.white)),
       flexibleSpace: FlexibleSpaceBar(
         // title: Text('Details', style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: Colors.white)),
         background: Stack(
           fit: StackFit.expand,
           children: [
             details.imageUrl.isNotEmpty
-                ? Image.network(details.imageUrl, fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => Container(color: Colors.grey[900]))
+                ? Image.network(
+                    details.imageUrl,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) =>
+                        Container(color: Colors.grey[900]),
+                  )
                 : Container(color: Colors.grey[900]),
             // Gradient overlay for better text visibility
             Container(
@@ -320,9 +389,24 @@ class CustomerDetailsScreen extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(_capitalizeFirst(details.propertyName), style: GoogleFonts.inter(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold)),
+                  Text(
+                    _capitalizeFirst(details.propertyName),
+                    style: GoogleFonts.inter(
+                      color: Colors.white,
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                   const SizedBox(height: 4),
-                  Text(_capitalizeFirst(details.developerName.replaceFirst('By ', '')), style: GoogleFonts.inter(color: Colors.white70, fontSize: 14)),
+                  Text(
+                    _capitalizeFirst(
+                      details.developerName.replaceFirst('By ', ''),
+                    ),
+                    style: GoogleFonts.inter(
+                      color: Colors.white70,
+                      fontSize: 14,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -333,17 +417,31 @@ class CustomerDetailsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildPaymentSummaryTop(List<PaymentItemDto> payments, CustomerDetails details, String Function(String) translate) {
-    final currency = NumberFormat.currency(locale: 'en_US', symbol: 'AED ', decimalDigits: 0);
-    
+  Widget _buildPaymentSummaryTop(
+    List<PaymentItemDto> payments,
+    CustomerDetails details,
+    String Function(String) translate,
+  ) {
+    final currency = NumberFormat.currency(
+      locale: 'en_US',
+      symbol: 'AED ',
+      decimalDigits: 0,
+    );
+
     // Check if property is Off-Plan
-    final isOffPlan = details.propertyType.toLowerCase().contains('off') || 
-                      details.propertyType.toLowerCase().contains('plan');
-    
+    final isOffPlan =
+        details.propertyType.toLowerCase().contains('off') ||
+        details.propertyType.toLowerCase().contains('plan');
+
     // Calculate paid amount
-    final paidPayments = payments.where((p) => p.status.toLowerCase() == 'paid').toList();
-    final amountPaid = paidPayments.fold<num>(0, (sum, p) => sum + (p.emi ?? p.rent ?? 0));
-    
+    final paidPayments = payments
+        .where((p) => p.status.toLowerCase() == 'paid')
+        .toList();
+    final amountPaid = paidPayments.fold<num>(
+      0,
+      (sum, p) => sum + (p.emi ?? p.rent ?? 0),
+    );
+
     // Calculate pending amount based on property type
     num amountPending;
     if (isOffPlan && details.totalPrice != null && details.totalPrice! > 0) {
@@ -352,22 +450,25 @@ class CustomerDetailsScreen extends ConsumerWidget {
       if (amountPending < 0) amountPending = 0; // Ensure non-negative
     } else {
       // For Rental: Calculate from payments (total - paid)
-      final totalAmount = payments.fold<num>(0, (sum, p) => sum + (p.emi ?? p.rent ?? 0));
+      final totalAmount = payments.fold<num>(
+        0,
+        (sum, p) => sum + (p.emi ?? p.rent ?? 0),
+      );
       amountPending = totalAmount - amountPaid;
     }
-    
+
     // Calculate overall status
     final status = _calculateOverallStatus(payments);
     final statusColor = _getStatusColor(status);
     final statusText = _getStatusText(status);
-    
+
     // Calculate percentage paid (only for Off-Plan)
     String? percentageText;
     if (isOffPlan && details.totalPrice != null && details.totalPrice! > 0) {
       final percentagePaid = (amountPaid / details.totalPrice!) * 100;
       percentageText = '${percentagePaid.toStringAsFixed(1)}%';
     }
-    
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -377,14 +478,33 @@ class CustomerDetailsScreen extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(translate('Payment Summary'), style: GoogleFonts.inter(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+          Text(
+            translate('Payment Summary'),
+            style: GoogleFonts.inter(
+              color: Colors.white,
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
           const SizedBox(height: 16),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Expanded(child: _SummaryInfo(title: translate('Amount Paid'), value: currency.format(amountPaid), color: Colors.greenAccent)),
+              Expanded(
+                child: _SummaryInfo(
+                  title: translate('Amount Paid'),
+                  value: currency.format(amountPaid),
+                  color: Colors.greenAccent,
+                ),
+              ),
               const SizedBox(width: 12),
-              Expanded(child: _SummaryInfo(title: translate('Amount Pending'), value: currency.format(amountPending), color: Colors.yellow[700]!)),
+              Expanded(
+                child: _SummaryInfo(
+                  title: translate('Amount Pending'),
+                  value: currency.format(amountPending),
+                  color: Colors.yellow[700]!,
+                ),
+              ),
             ],
           ),
           // Show Total Price if available
@@ -404,22 +524,42 @@ class CustomerDetailsScreen extends ConsumerWidget {
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(translate('Total Price'), style: GoogleFonts.inter(color: Colors.grey[400], fontSize: 12)),
+                        Text(
+                          translate('Total Price'),
+                          style: GoogleFonts.inter(
+                            color: Colors.grey[400],
+                            fontSize: 12,
+                          ),
+                        ),
                         const SizedBox(height: 8),
                         Text(
                           currency.format(details.totalPrice!),
-                          style: GoogleFonts.inter(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700),
+                          style: GoogleFonts.inter(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
                       ],
                     ),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
-                        Text(translate('Paid'), style: GoogleFonts.inter(color: Colors.grey[400], fontSize: 12)),
+                        Text(
+                          translate('Paid'),
+                          style: GoogleFonts.inter(
+                            color: Colors.grey[400],
+                            fontSize: 12,
+                          ),
+                        ),
                         const SizedBox(height: 8),
                         Text(
                           percentageText,
-                          style: GoogleFonts.inter(color: Colors.greenAccent, fontSize: 16, fontWeight: FontWeight.bold),
+                          style: GoogleFonts.inter(
+                            color: Colors.greenAccent,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ],
                     ),
@@ -428,22 +568,36 @@ class CustomerDetailsScreen extends ConsumerWidget {
               )
             else
               // For Rental: Show Property Price without percentage
-              _SummaryInfo(title: translate('Property Price'), value: currency.format(details.totalPrice!), color: Colors.white),
+              _SummaryInfo(
+                title: translate('Property Price'),
+                value: currency.format(details.totalPrice!),
+                color: Colors.white,
+              ),
           ],
           const SizedBox(height: 16),
           Row(
             children: [
-              Text('Status', style: GoogleFonts.inter(color: Colors.grey[500], fontSize: 12)),
+              Text(
+                'Status',
+                style: GoogleFonts.inter(color: Colors.grey[500], fontSize: 12),
+              ),
               const SizedBox(width: 12),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   border: Border.all(color: statusColor),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
                   statusText,
-                  style: GoogleFonts.inter(color: statusColor, fontWeight: FontWeight.bold, fontSize: 14),
+                  style: GoogleFonts.inter(
+                    color: statusColor,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
                 ),
               ),
             ],
@@ -453,34 +607,60 @@ class CustomerDetailsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildRentalDetailsSection(CustomerDetails details, List<PaymentItemDto>? payments, String Function(String) translate) {
+  Widget _buildRentalDetailsSection(
+    CustomerDetails details,
+    List<PaymentItemDto>? payments,
+    String Function(String) translate,
+  ) {
     // Calculate pending installments count
     int pendingCount = 0;
     if (payments != null && payments.isNotEmpty) {
-      pendingCount = payments.where((p) => p.status.toLowerCase() != 'paid').length;
+      pendingCount = payments
+          .where((p) => p.status.toLowerCase() != 'paid')
+          .length;
     }
-    
+
     // Determine section title based on property type
-    final isOffPlan = details.propertyType.toLowerCase().contains('off') || details.propertyType.toLowerCase().contains('plan');
-    final sectionTitle = isOffPlan ? translate('Offplan Details') : translate('Rental Details');
-    
+    final isOffPlan =
+        details.propertyType.toLowerCase().contains('off') ||
+        details.propertyType.toLowerCase().contains('plan');
+    final sectionTitle = isOffPlan
+        ? translate('Offplan Details')
+        : translate('Rental Details');
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(sectionTitle, style: GoogleFonts.inter(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+        Text(
+          sectionTitle,
+          style: GoogleFonts.inter(
+            color: Colors.white,
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
         const SizedBox(height: 12),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            _InfoColumn(title: translate('Tenant Name'), value: _capitalizeFirst(details.tenantName)),
-            _InfoColumn(title: translate('Installments Due'), value: pendingCount.toString()),
+            _InfoColumn(
+              title: translate('Tenant Name'),
+              value: _capitalizeFirst(details.tenantName),
+            ),
+            _InfoColumn(
+              title: translate('Installments Due'),
+              value: pendingCount.toString(),
+            ),
           ],
         ),
         const SizedBox(height: 12),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            _InfoColumn(title: translate('Property Type'), value: details.propertyType),
+            _InfoColumn(
+              title: translate('Property Type'),
+              value: details.propertyType,
+            ),
             const SizedBox(), // Status removed from here, now at top
           ],
         ),
@@ -490,28 +670,30 @@ class CustomerDetailsScreen extends ConsumerWidget {
 
   String _calculateOverallStatus(List<PaymentItemDto> payments) {
     if (payments.isEmpty) return 'due';
-    
+
     // Check if all payments are paid
     final allPaid = payments.every((p) => p.status.toLowerCase() == 'paid');
     if (allPaid) return 'paid';
-    
+
     final now = DateTime.now();
     final currentYear = now.year;
     final currentMonth = now.month;
-    
+
     // Check for overdue payments (past due date and unpaid)
     bool hasOverdue = false;
     bool hasDue = false;
-    
+
     for (var payment in payments) {
       if (payment.status.toLowerCase() == 'paid') continue;
-      
+
       if (payment.paymentDate != null) {
         try {
           final paymentDate = DateTime.parse(payment.paymentDate!);
-          final isPast = paymentDate.year < currentYear || 
-                        (paymentDate.year == currentYear && paymentDate.month < currentMonth);
-          
+          final isPast =
+              paymentDate.year < currentYear ||
+              (paymentDate.year == currentYear &&
+                  paymentDate.month < currentMonth);
+
           if (isPast) {
             hasOverdue = true;
             break;
@@ -525,7 +707,7 @@ class CustomerDetailsScreen extends ConsumerWidget {
         hasDue = true;
       }
     }
-    
+
     if (hasOverdue) return 'overdue';
     if (hasDue) return 'due';
     return 'due';
@@ -555,14 +737,27 @@ class CustomerDetailsScreen extends ConsumerWidget {
     }
   }
 
-  Widget _buildRentalAgreementSection(CustomerDetails details, String Function(String) translate, BuildContext context) {
+  Widget _buildRentalAgreementSection(
+    CustomerDetails details,
+    String Function(String) translate,
+    BuildContext context,
+  ) {
     final isRental = details.propertyType.toLowerCase() == 'rental';
-    final pdfUrl = isRental ? details.rentalAgreement : details.offplanAgreement;
-    
+    final pdfUrl = isRental
+        ? details.rentalAgreement
+        : details.offplanAgreement;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(translate('Agreement'), style: GoogleFonts.inter(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+        Text(
+          translate('Agreement'),
+          style: GoogleFonts.inter(
+            color: Colors.white,
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
         const SizedBox(height: 12),
         GestureDetector(
           onTap: pdfUrl != null && pdfUrl.isNotEmpty
@@ -587,32 +782,52 @@ class CustomerDetailsScreen extends ConsumerWidget {
                     children: [
                       Text(
                         details.pdfFileName,
-                        style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.bold),
+                        style: GoogleFonts.inter(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         details.pdfFileSize,
-                        style: GoogleFonts.inter(color: Colors.grey[500], fontSize: 12),
+                        style: GoogleFonts.inter(
+                          color: Colors.grey[500],
+                          fontSize: 12,
+                        ),
                       ),
                     ],
                   ),
                 ),
                 if (pdfUrl != null && pdfUrl.isNotEmpty)
-                  const Icon(Icons.arrow_forward_ios, color: Colors.yellow, size: 16),
+                  const Icon(
+                    Icons.arrow_forward_ios,
+                    color: Colors.yellow,
+                    size: 16,
+                  ),
               ],
             ),
           ),
         ),
         const SizedBox(height: 8),
-        Text(details.agreementValidity, style: GoogleFonts.inter(color: Colors.grey[500], fontSize: 12)),
+        Text(
+          details.agreementValidity,
+          style: GoogleFonts.inter(color: Colors.grey[500], fontSize: 12),
+        ),
       ],
     );
   }
 
-  Widget _buildChargesSection(CustomerDetails details, String Function(String) translate) {
+  Widget _buildChargesSection(
+    CustomerDetails details,
+    String Function(String) translate,
+  ) {
     // Only show if at least one charge field has a value
-    final hasCharges = details.dld != null || details.quood != null || details.otherCharges != null || details.penalties != null;
-    
+    final hasCharges =
+        details.dld != null ||
+        details.quood != null ||
+        details.otherCharges != null ||
+        details.penalties != null;
+
     if (!hasCharges) {
       return const SizedBox.shrink();
     }
@@ -622,7 +837,11 @@ class CustomerDetailsScreen extends ConsumerWidget {
       children: [
         Text(
           translate('Charges'),
-          style: GoogleFonts.inter(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+          style: GoogleFonts.inter(
+            color: Colors.white,
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         const SizedBox(height: 12),
         Row(
@@ -672,12 +891,18 @@ class CustomerDetailsScreen extends ConsumerWidget {
             ),
           ],
         ),
-        const SizedBox(height: 24), // Extra spacing at bottom of charges section
+        const SizedBox(
+          height: 24,
+        ), // Extra spacing at bottom of charges section
       ],
     );
   }
 
-  Widget _buildActionButtons(CustomerDetails details, String Function(String) translate) {
+  Widget _buildActionButtons(
+    CustomerDetails details,
+    String Function(String) translate,
+    WidgetRef ref,
+  ) {
     return Builder(
       builder: (context) {
         return Positioned(
@@ -692,100 +917,191 @@ class CustomerDetailsScreen extends ConsumerWidget {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                  // Edit and Delete buttons row
-                  Row(
-                    children: [
-                      Expanded(
-                        child: ElevatedButton.icon(
-                          onPressed: () {
-                            context.pushNamed('edit-property', pathParameters: {'itemId': itemId});
-                          },
-                          icon: const Icon(Icons.edit, color: Colors.white, size: 18),
-                          label: Text(translate('Edit Property'), style: GoogleFonts.inter(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.grey[800],
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                    // Edit and Delete buttons row
+                    Row(
+                      children: [
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            onPressed: () {
+                              context.pushNamed(
+                                'edit-property',
+                                pathParameters: {'itemId': itemId},
+                              );
+                            },
+                            icon: const Icon(
+                              Icons.edit,
+                              color: Colors.white,
+                              size: 18,
+                            ),
+                            label: Text(
+                              translate('Edit Property'),
+                              style: GoogleFonts.inter(
+                                color: Colors.white,
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.grey[800],
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(30),
+                              ),
+                            ),
                           ),
                         ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: ElevatedButton.icon(
-                          onPressed: () async {
-                            // Show confirmation dialog
-                            final confirmed = await showDialog<bool>(
-                              context: context,
-                              builder: (context) => AlertDialog(
-                                backgroundColor: Colors.grey[900],
-                                title: Text(translate('Delete Property'), style: GoogleFonts.inter(color: Colors.white)),
-                                content: Text(translate('Are you sure you want to delete this property? This action cannot be undone.'), style: GoogleFonts.inter(color: Colors.white70)),
-                                actions: [
-                                  TextButton(
-                                    onPressed: () => Navigator.of(context).pop(false),
-                                    child: Text(translate('Cancel'), style: GoogleFonts.inter(color: Colors.grey)),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            onPressed: () async {
+                              // Show confirmation dialog
+                              final confirmed = await showDialog<bool>(
+                                context: context,
+                                builder: (context) => AlertDialog(
+                                  backgroundColor: Colors.grey[900],
+                                  title: Text(
+                                    translate('Delete Property'),
+                                    style: GoogleFonts.inter(
+                                      color: Colors.white,
+                                    ),
                                   ),
-                                  TextButton(
-                                    onPressed: () => Navigator.of(context).pop(true),
-                                    child: Text(translate('Delete'), style: GoogleFonts.inter(color: Colors.red)),
+                                  content: Text(
+                                    translate(
+                                      'Are you sure you want to delete this property? This action cannot be undone.',
+                                    ),
+                                    style: GoogleFonts.inter(
+                                      color: Colors.white70,
+                                    ),
                                   ),
-                                ],
-                              ),
-                            );
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () =>
+                                          Navigator.of(context).pop(false),
+                                      child: Text(
+                                        translate('Cancel'),
+                                        style: GoogleFonts.inter(
+                                          color: Colors.grey,
+                                        ),
+                                      ),
+                                    ),
+                                    TextButton(
+                                      onPressed: () =>
+                                          Navigator.of(context).pop(true),
+                                      child: Text(
+                                        translate('Delete'),
+                                        style: GoogleFonts.inter(
+                                          color: Colors.red,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
 
-                            if (confirmed == true) {
-                              final occupantsService = OccupantsService();
-                              final success = await occupantsService.deleteOccupantRecord(int.parse(itemId));
+                              if (confirmed == true) {
+                                final occupantsService = ref.read(
+                                  occupantsServiceProvider,
+                                );
+                                final success = await occupantsService
+                                    .deleteOccupantRecord(int.parse(itemId));
 
-                              if (context.mounted) {
-                                if (success) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(content: Text(translate('Property deleted successfully')), backgroundColor: Colors.green),
-                                  );
-                                  context.pop(); // Go back to previous screen
-                                } else {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(content: Text(translate('Failed to delete property')), backgroundColor: Colors.red),
-                                  );
+                                if (context.mounted) {
+                                  if (success) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(
+                                          translate(
+                                            'Property deleted successfully',
+                                          ),
+                                        ),
+                                        backgroundColor: Colors.green,
+                                      ),
+                                    );
+                                    context.pop(); // Go back to previous screen
+                                  } else {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(
+                                          translate(
+                                            'Failed to delete property',
+                                          ),
+                                        ),
+                                        backgroundColor: Colors.red,
+                                      ),
+                                    );
+                                  }
                                 }
                               }
+                            },
+                            icon: const Icon(
+                              Icons.delete,
+                              color: Colors.white,
+                              size: 18,
+                            ),
+                            label: Text(
+                              translate('Delete'),
+                              style: GoogleFonts.inter(
+                                color: Colors.white,
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.red[700],
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(30),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    // Call button
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: () async {
+                          final phoneNumber = details.phone;
+                          if (phoneNumber.isNotEmpty) {
+                            final Uri phoneUri = Uri(
+                              scheme: 'tel',
+                              path: phoneNumber,
+                            );
+                            if (await canLaunchUrl(phoneUri)) {
+                              await launchUrl(phoneUri);
+                            } else {
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      translate('Unable to make phone call'),
+                                    ),
+                                    backgroundColor: Colors.red,
+                                  ),
+                                );
+                              }
                             }
-                          },
-                          icon: const Icon(Icons.delete, color: Colors.white, size: 18),
-                          label: Text(translate('Delete'), style: GoogleFonts.inter(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.red[700],
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.yellow[700],
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(30),
+                          ),
+                        ),
+                        child: Text(
+                          translate('Call the Tenant'),
+                          style: GoogleFonts.inter(
+                            color: Colors.black,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  // Call button
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: () async {
-                        final phoneNumber = details.phone;
-                        if (phoneNumber.isNotEmpty) {
-                          final Uri phoneUri = Uri(scheme: 'tel', path: phoneNumber);
-                          if (await canLaunchUrl(phoneUri)) {
-                            await launchUrl(phoneUri);
-                          } else {
-                            if (context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text(translate('Unable to make phone call')), backgroundColor: Colors.red),
-                              );
-                            }
-                          }
-                        }
-                      },
-                      style: ElevatedButton.styleFrom(backgroundColor: Colors.yellow[700], padding: const EdgeInsets.symmetric(vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30))),
-                      child: Text(translate('Call the Tenant'), style: GoogleFonts.inter(color: Colors.black, fontSize: 16, fontWeight: FontWeight.bold)),
                     ),
-                  ),
                   ],
                 ),
               ),
@@ -808,29 +1124,52 @@ class _InfoColumn extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(title, style: GoogleFonts.inter(color: Colors.grey[500], fontSize: 12)),
+        Text(
+          title,
+          style: GoogleFonts.inter(color: Colors.grey[500], fontSize: 12),
+        ),
         const SizedBox(height: 4),
-        Text(value, style: GoogleFonts.inter(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600)),
+        Text(
+          value,
+          style: GoogleFonts.inter(
+            color: Colors.white,
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
       ],
     );
   }
 }
 
-
 class _SummaryInfo extends StatelessWidget {
   final String title;
   final String value;
   final Color color;
-  const _SummaryInfo({required this.title, required this.value, required this.color});
+  const _SummaryInfo({
+    required this.title,
+    required this.value,
+    required this.color,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(title, style: GoogleFonts.inter(color: Colors.grey[400], fontSize: 12)),
+        Text(
+          title,
+          style: GoogleFonts.inter(color: Colors.grey[400], fontSize: 12),
+        ),
         const SizedBox(height: 8),
-        Text(value, style: GoogleFonts.inter(color: color, fontSize: 16, fontWeight: FontWeight.w700)),
+        Text(
+          value,
+          style: GoogleFonts.inter(
+            color: color,
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
       ],
     );
   }
@@ -842,7 +1181,7 @@ class _ChargeCard extends ConsumerWidget {
   final String itemId;
   final String fieldName; // 'dld', 'quood', 'otherCharges', 'penalties'
   final String Function(String) translate;
-  
+
   const _ChargeCard({
     required this.title,
     this.value,
@@ -856,16 +1195,29 @@ class _ChargeCard extends ConsumerWidget {
     final displayValue = value != null ? 'AED $value' : '—';
     return Container(
       padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(color: Colors.grey[900], borderRadius: BorderRadius.circular(12)),
+      decoration: BoxDecoration(
+        color: Colors.grey[900],
+        borderRadius: BorderRadius.circular(12),
+      ),
       child: Stack(
         children: [
           Column(
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(title, style: GoogleFonts.inter(color: Colors.grey[400], fontSize: 12)),
+              Text(
+                title,
+                style: GoogleFonts.inter(color: Colors.grey[400], fontSize: 12),
+              ),
               const SizedBox(height: 4),
-              Text(displayValue, style: GoogleFonts.inter(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700)),
+              Text(
+                displayValue,
+                style: GoogleFonts.inter(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
             ],
           ),
           Positioned(
@@ -885,14 +1237,17 @@ class _ChargeCard extends ConsumerWidget {
 
   void _showEditDialog(BuildContext context, WidgetRef ref) {
     final controller = TextEditingController(text: value?.toString() ?? '');
-    
+
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
         backgroundColor: Colors.grey[900],
         title: Text(
           translate('Edit') + ' $title',
-          style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.bold),
+          style: GoogleFonts.inter(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         content: TextField(
           controller: controller,
@@ -920,12 +1275,15 @@ class _ChargeCard extends ConsumerWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext),
-            child: Text(translate('Cancel'), style: const TextStyle(color: Colors.grey)),
+            child: Text(
+              translate('Cancel'),
+              style: const TextStyle(color: Colors.grey),
+            ),
           ),
           ElevatedButton(
             onPressed: () async {
               final newValue = int.tryParse(controller.text.trim());
-              
+
               // Validate input
               if (newValue == null) {
                 ScaffoldMessenger.of(context).showSnackBar(
@@ -936,9 +1294,9 @@ class _ChargeCard extends ConsumerWidget {
                 );
                 return;
               }
-              
-              final occupantsService = OccupantsService();
-              
+
+              final occupantsService = ref.read(occupantsServiceProvider);
+
               // Build map with only the field being updated
               final updateMap = <String, int?>{};
               if (fieldName == 'dld') {
@@ -950,28 +1308,30 @@ class _ChargeCard extends ConsumerWidget {
               } else if (fieldName == 'penalties') {
                 updateMap['penalties'] = newValue;
               }
-              
+
               final success = await occupantsService.updateCharges(
                 int.parse(itemId),
                 updateMap,
               );
-              
+
               if (dialogContext.mounted) {
                 Navigator.pop(dialogContext);
                 if (success) {
                   // Invalidate and wait a bit for the backend to process
                   ref.invalidate(customerDetailsProvider(itemId));
-                  
+
                   // Force a rebuild by waiting a moment
                   await Future.delayed(const Duration(milliseconds: 300));
-                  
+
                   // Refresh again to ensure we get the latest data
                   ref.invalidate(customerDetailsProvider(itemId));
-                  
+
                   if (context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content: Text(translate('Charges updated successfully')),
+                        content: Text(
+                          translate('Charges updated successfully'),
+                        ),
                         backgroundColor: Colors.green,
                         duration: const Duration(seconds: 2),
                       ),
@@ -989,8 +1349,13 @@ class _ChargeCard extends ConsumerWidget {
                 }
               }
             },
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.yellow[700]),
-            child: Text(translate('Save'), style: const TextStyle(color: Colors.black)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.yellow[700],
+            ),
+            child: Text(
+              translate('Save'),
+              style: const TextStyle(color: Colors.black),
+            ),
           ),
         ],
       ),
@@ -1002,8 +1367,14 @@ class _TimelineRow extends ConsumerWidget {
   final PaymentItemDto payment;
   final String itemId;
   final int index;
-  final CustomerDetails? propertyDetails; // Add property details to check if OffPlan
-  const _TimelineRow({required this.payment, required this.itemId, required this.index, this.propertyDetails});
+  final CustomerDetails?
+  propertyDetails; // Add property details to check if OffPlan
+  const _TimelineRow({
+    required this.payment,
+    required this.itemId,
+    required this.index,
+    this.propertyDetails,
+  });
 
   Color _statusColor(String s) {
     switch (s.toLowerCase()) {
@@ -1039,21 +1410,49 @@ class _TimelineRow extends ConsumerWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(color: Colors.grey[900], borderRadius: BorderRadius.circular(12)),
+      decoration: BoxDecoration(
+        color: Colors.grey[900],
+        borderRadius: BorderRadius.circular(12),
+      ),
       child: Row(
         children: [
-          Container(width: 10, height: 10, decoration: BoxDecoration(color: _statusColor(payment.status), shape: BoxShape.circle)),
+          Container(
+            width: 10,
+            height: 10,
+            decoration: BoxDecoration(
+              color: _statusColor(payment.status),
+              shape: BoxShape.circle,
+            ),
+          ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Payment $index', style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w600)),
+                Text(
+                  'Payment $index',
+                  style: GoogleFonts.inter(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
                 const SizedBox(height: 4),
-                Text(_formatDate(payment), style: GoogleFonts.inter(color: Colors.grey[500], fontSize: 12)),
+                Text(
+                  _formatDate(payment),
+                  style: GoogleFonts.inter(
+                    color: Colors.grey[500],
+                    fontSize: 12,
+                  ),
+                ),
                 if (amount > 0) ...[
                   const SizedBox(height: 4),
-                  Text('AED ${amount.toStringAsFixed(0)}', style: GoogleFonts.inter(color: Colors.grey[400], fontSize: 11)),
+                  Text(
+                    'AED ${amount.toStringAsFixed(0)}',
+                    style: GoogleFonts.inter(
+                      color: Colors.grey[400],
+                      fontSize: 11,
+                    ),
+                  ),
                 ],
               ],
             ),
@@ -1063,7 +1462,8 @@ class _TimelineRow extends ConsumerWidget {
             Builder(
               builder: (context) {
                 final languageCode = ref.watch(languageProvider);
-                final translate = (String key) => LanguageService.translate(key, languageCode);
+                final translate = (String key) =>
+                    LanguageService.translate(key, languageCode);
                 // For paid payments, only show View button (Edit is available in the payment details page)
                 return ElevatedButton(
                   onPressed: () {
@@ -1074,16 +1474,32 @@ class _TimelineRow extends ConsumerWidget {
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.transparent,
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
                     side: BorderSide(color: _statusColor(payment.status)),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text(translate('View'), style: GoogleFonts.inter(color: _statusColor(payment.status), fontWeight: FontWeight.bold, fontSize: 12)),
+                      Text(
+                        translate('View'),
+                        style: GoogleFonts.inter(
+                          color: _statusColor(payment.status),
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                        ),
+                      ),
                       const SizedBox(width: 4),
-                      Icon(Icons.chevron_right, color: _statusColor(payment.status), size: 16),
+                      Icon(
+                        Icons.chevron_right,
+                        color: _statusColor(payment.status),
+                        size: 16,
+                      ),
                     ],
                   ),
                 );
@@ -1098,7 +1514,11 @@ class _TimelineRow extends ConsumerWidget {
                   children: [
                     // Edit button
                     IconButton(
-                      icon: const Icon(Icons.edit, color: Colors.yellow, size: 20),
+                      icon: const Icon(
+                        Icons.edit,
+                        color: Colors.yellow,
+                        size: 20,
+                      ),
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints(),
                       onPressed: () {
@@ -1110,9 +1530,12 @@ class _TimelineRow extends ConsumerWidget {
                             'amount': '${amount}',
                             'status': payment.status,
                             'modeOfPayment': payment.modeOfPayment ?? 'online',
-                            if (payment.paymentDate != null) 'paymentDate': payment.paymentDate!,
+                            if (payment.paymentDate != null)
+                              'paymentDate': payment.paymentDate!,
                             'propertyType': payment.propertyType,
-                            if (payment.paymentProof != null && payment.paymentProof!.isNotEmpty) 'proofUrl': payment.paymentProof!,
+                            if (payment.paymentProof != null &&
+                                payment.paymentProof!.isNotEmpty)
+                              'proofUrl': payment.paymentProof!,
                           },
                         );
                       },
@@ -1120,7 +1543,11 @@ class _TimelineRow extends ConsumerWidget {
                     const SizedBox(width: 8),
                     // Green tick button - opens mark as paid
                     IconButton(
-                      icon: const Icon(Icons.check_circle, color: Colors.green, size: 28),
+                      icon: const Icon(
+                        Icons.check_circle,
+                        color: Colors.green,
+                        size: 28,
+                      ),
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints(),
                       onPressed: () {
@@ -1132,9 +1559,12 @@ class _TimelineRow extends ConsumerWidget {
                             'amount': '${amount}',
                             'status': payment.status,
                             'modeOfPayment': payment.modeOfPayment ?? 'online',
-                            if (payment.paymentDate != null) 'paymentDate': payment.paymentDate!,
+                            if (payment.paymentDate != null)
+                              'paymentDate': payment.paymentDate!,
                             'propertyType': payment.propertyType,
-                            if (payment.paymentProof != null && payment.paymentProof!.isNotEmpty) 'proofUrl': payment.paymentProof!,
+                            if (payment.paymentProof != null &&
+                                payment.paymentProof!.isNotEmpty)
+                              'proofUrl': payment.paymentProof!,
                           },
                         );
                       },

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:flutter/foundation.dart';
 import 'package:continental/services/payments_service.dart';
+import 'package:continental/services/dio_service.dart';
 import 'package:intl/intl.dart';
 
 enum PaymentType { offPlan, rental }
@@ -42,7 +43,9 @@ class Payment {
       name: json['name'],
       propertyName: json['propertyName'],
       amount: json['amount'],
-      type: json['type'].toLowerCase() == 'rental' ? PaymentType.rental : PaymentType.offPlan,
+      type: json['type'].toLowerCase() == 'rental'
+          ? PaymentType.rental
+          : PaymentType.offPlan,
       paymentDate: json['paymentDate'] ?? '',
       paymentProof: json['paymentProof'],
       modeOfPayment: json['modeOfPayment'],
@@ -54,16 +57,25 @@ class Payment {
 
 // --- 2. Repository ---
 class PaymentsRepository {
-  final PaymentsService _paymentsService = PaymentsService();
+  final PaymentsService _paymentsService;
+
+  PaymentsRepository(this._paymentsService);
 
   Future<List<Payment>> fetchPayments({String searchQuery = ''}) async {
     print("Fetching paid payments with query: '$searchQuery'...");
-    
+
     // Fetch all payments with status 'paid'
-    final allPayments = await _paymentsService.fetchPayments(status: 'paid', dedupe: false);
-    
+    final allPayments = await _paymentsService.fetchPayments(
+      status: 'paid',
+      dedupe: false,
+    );
+
     // Convert to Payment model and format amount
-    final currency = NumberFormat.currency(locale: 'en_US', symbol: 'AED ', decimalDigits: 0);
+    final currency = NumberFormat.currency(
+      locale: 'en_US',
+      symbol: 'AED ',
+      decimalDigits: 0,
+    );
     final payments = allPayments.map((p) {
       final amount = p.emi ?? p.rent ?? 0;
       return Payment(
@@ -72,7 +84,9 @@ class PaymentsRepository {
         name: p.name,
         propertyName: p.propertyName,
         amount: currency.format(amount),
-        type: p.propertyType.toLowerCase() == 'rental' ? PaymentType.rental : PaymentType.offPlan,
+        type: p.propertyType.toLowerCase() == 'rental'
+            ? PaymentType.rental
+            : PaymentType.offPlan,
         paymentDate: p.paymentDate ?? '',
         paymentProof: p.paymentProof,
         modeOfPayment: p.modeOfPayment,
@@ -80,16 +94,16 @@ class PaymentsRepository {
         updatedAt: p.updatedAt,
       );
     }).toList();
-    
+
     // Sort by updated_at (most recent first) - this shows when payment was marked as paid
     payments.sort((a, b) {
       // Use updated_at for sorting as it reflects when payment was marked as paid
       final dateStrA = a.updatedAt ?? a.paymentDate;
       final dateStrB = b.updatedAt ?? b.paymentDate;
-      
+
       if (dateStrA.isEmpty) return 1;
       if (dateStrB.isEmpty) return -1;
-      
+
       try {
         final dateA = DateTime.parse(dateStrA);
         final dateB = DateTime.parse(dateStrB);
@@ -98,20 +112,20 @@ class PaymentsRepository {
         return 0;
       }
     });
-    
+
     // Filter by search query if provided
     if (searchQuery.isNotEmpty) {
       return payments
-          .where((payment) =>
-              payment.propertyName
-                  .toLowerCase()
-                  .contains(searchQuery.toLowerCase()) ||
-              payment.name
-                  .toLowerCase()
-                  .contains(searchQuery.toLowerCase()))
+          .where(
+            (payment) =>
+                payment.propertyName.toLowerCase().contains(
+                  searchQuery.toLowerCase(),
+                ) ||
+                payment.name.toLowerCase().contains(searchQuery.toLowerCase()),
+          )
           .toList();
     }
-    
+
     return payments;
   }
 }
@@ -122,7 +136,10 @@ class PaymentsRepository {
 final paymentSearchQueryProvider = StateProvider<String>((ref) => '');
 
 // Provider for the repository
-final paymentsRepoProvider = Provider((ref) => PaymentsRepository());
+final paymentsRepoProvider = Provider((ref) {
+  final paymentsService = ref.read(paymentsServiceProvider);
+  return PaymentsRepository(paymentsService);
+});
 
 // FutureProvider that fetches and filters the data
 final paymentsProvider = FutureProvider<List<Payment>>((ref) {

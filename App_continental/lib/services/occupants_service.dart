@@ -1,8 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart';
 import 'package:intl/intl.dart';
-import 'package:continental/config/api_config.dart';
-import 'package:continental/storage/token_storage.dart';
 
 class OccupantDetailDto {
   final int id;
@@ -80,7 +78,9 @@ class OccupantDetailDto {
     List<String>? amenitiesList;
     if (json['amenities'] != null) {
       if (json['amenities'] is List) {
-        amenitiesList = (json['amenities'] as List).map((e) => e.toString()).toList();
+        amenitiesList = (json['amenities'] as List)
+            .map((e) => e.toString())
+            .toList();
       }
     }
 
@@ -116,46 +116,72 @@ class OccupantDetailDto {
       locality: json['locality'],
       homeType: json['home_type'],
       market: json['market'],
-      bedrooms: json['bedrooms'] is int ? json['bedrooms'] : (json['bedrooms'] is String ? int.tryParse(json['bedrooms']) : null),
-      bathrooms: json['bathrooms'] is int ? json['bathrooms'] : (json['bathrooms'] is String ? int.tryParse(json['bathrooms']) : null),
+      bedrooms: json['bedrooms'] is int
+          ? json['bedrooms']
+          : (json['bedrooms'] is String
+                ? int.tryParse(json['bedrooms'])
+                : null),
+      bathrooms: json['bathrooms'] is int
+          ? json['bathrooms']
+          : (json['bathrooms'] is String
+                ? int.tryParse(json['bathrooms'])
+                : null),
       furnishing: json['furnishing'],
       city: json['city'],
       location: json['location'],
-      latitude: json['latitude'] is double ? json['latitude'] : (json['latitude'] is num ? json['latitude'].toDouble() : null),
-      longitude: json['longitude'] is double ? json['longitude'] : (json['longitude'] is num ? json['longitude'].toDouble() : null),
+      latitude: json['latitude'] is double
+          ? json['latitude']
+          : (json['latitude'] is num ? json['latitude'].toDouble() : null),
+      longitude: json['longitude'] is double
+          ? json['longitude']
+          : (json['longitude'] is num ? json['longitude'].toDouble() : null),
       propertyViews: json['property_views'],
       amenities: amenitiesList,
-      price: (json['price'] is num) ? json['price'] : num.tryParse('${json['price']}'),
+      price: (json['price'] is num)
+          ? json['price']
+          : num.tryParse('${json['price']}'),
       emi: (json['emi'] is num) ? json['emi'] : num.tryParse('${json['emi']}'),
-      rent: (json['rent'] is num) ? json['rent'] : num.tryParse('${json['rent']}'),
+      rent: (json['rent'] is num)
+          ? json['rent']
+          : num.tryParse('${json['rent']}'),
       paymentFrequency: json['payment_frequency'],
-      paymentCount: json['payment_count'] is int ? json['payment_count'] : (json['payment_count'] is String ? int.tryParse(json['payment_count']) : null),
+      paymentCount: json['payment_count'] is int
+          ? json['payment_count']
+          : (json['payment_count'] is String
+                ? int.tryParse(json['payment_count'])
+                : null),
       handover: handoverDate,
       imageUrl: json['image_url'],
       rentalAgreement: json['rental_agreement'],
       offplanAgreement: json['offplan_agreement'],
       completionDate: completionDateStr,
-      dld: json['dld'] is int ? json['dld'] : (json['dld'] is String ? int.tryParse(json['dld']) : null),
-      quood: json['quood'] is int ? json['quood'] : (json['quood'] is String ? int.tryParse(json['quood']) : null),
-      otherCharges: json['other_charges'] is int ? json['other_charges'] : (json['other_charges'] is String ? int.tryParse(json['other_charges']) : null),
-      penalties: json['penalties'] is int ? json['penalties'] : (json['penalties'] is String ? int.tryParse(json['penalties']) : null),
+      dld: json['dld'] is int
+          ? json['dld']
+          : (json['dld'] is String ? int.tryParse(json['dld']) : null),
+      quood: json['quood'] is int
+          ? json['quood']
+          : (json['quood'] is String ? int.tryParse(json['quood']) : null),
+      otherCharges: json['other_charges'] is int
+          ? json['other_charges']
+          : (json['other_charges'] is String
+                ? int.tryParse(json['other_charges'])
+                : null),
+      penalties: json['penalties'] is int
+          ? json['penalties']
+          : (json['penalties'] is String
+                ? int.tryParse(json['penalties'])
+                : null),
     );
   }
 }
 
 class OccupantsService {
-  final Dio _dio = Dio(BaseOptions(
-    baseUrl: ApiConfig.baseUrl,
-    connectTimeout: const Duration(seconds: 60),
-    receiveTimeout: const Duration(seconds: 60),
-    sendTimeout: const Duration(seconds: 30),
-  ));
-  final TokenStorage _tokenStorage = TokenStorage();
+  final Dio _dio;
+
+  OccupantsService(this._dio);
 
   Future<OccupantDetailDto?> fetchOccupantDetail(int id) async {
-    final token = await _tokenStorage.getToken();
-    final headers = ApiConfig.getAuthHeaders(token);
-    final response = await _dio.get('/occupant-records/$id', options: Options(headers: headers));
+    final response = await _dio.get('/occupant-records/$id');
     if (response.statusCode == 200) {
       final data = response.data['data'] as Map<String, dynamic>;
       return OccupantDetailDto.fromJson(data);
@@ -165,20 +191,20 @@ class OccupantsService {
 
   Future<bool> updateCharges(int id, Map<String, int?> charges) async {
     try {
-      final token = await _tokenStorage.getToken();
-      final headers = ApiConfig.getAuthHeaders(token);
       final data = <String, dynamic>{};
 
       // Only include fields that are in the map (explicitly provided)
       // Note: We allow null values to clear a field, and 0 is a valid charge amount
       if (charges.containsKey('dld')) {
-        data['dld'] = charges['dld']; // Can be null to clear, or a number (including 0)
+        data['dld'] =
+            charges['dld']; // Can be null to clear, or a number (including 0)
       }
       if (charges.containsKey('quood')) {
         data['quood'] = charges['quood'];
       }
       if (charges.containsKey('otherCharges')) {
-        data['other_charges'] = charges['otherCharges']; // Backend uses snake_case
+        data['other_charges'] =
+            charges['otherCharges']; // Backend uses snake_case
       }
       if (charges.containsKey('penalties')) {
         data['penalties'] = charges['penalties'];
@@ -192,20 +218,17 @@ class OccupantsService {
 
       debugPrint('📤 [UPDATE_CHARGES] Updating charges for ID $id: $data');
 
-      final response = await _dio.put(
-        '/occupant-records/$id',
-        data: data,
-        options: Options(headers: headers),
-      );
+      final response = await _dio.put('/occupant-records/$id', data: data);
 
       debugPrint('✅ [UPDATE_CHARGES] Response status: ${response.statusCode}');
       debugPrint('📦 [UPDATE_CHARGES] Response data: ${response.data}');
 
       if (response.statusCode == 200 && response.data['success'] == true) {
-        // Verify the updated values in response
         final updatedData = response.data['data'];
         if (updatedData != null) {
-          debugPrint('📊 [UPDATE_CHARGES] Updated values: dld=${updatedData['dld']}, quood=${updatedData['quood']}, other_charges=${updatedData['other_charges']}, penalties=${updatedData['penalties']}');
+          debugPrint(
+            '📊 [UPDATE_CHARGES] Updated values: dld=${updatedData['dld']}, quood=${updatedData['quood']}, other_charges=${updatedData['other_charges']}, penalties=${updatedData['penalties']}',
+          );
         }
         return true;
       }
@@ -218,16 +241,11 @@ class OccupantsService {
 
   Future<bool> updateOccupantRecord(int id, Map<String, dynamic> data) async {
     try {
-      final token = await _tokenStorage.getToken();
-      final headers = ApiConfig.getAuthHeaders(token);
-
-      debugPrint('📤 [UPDATE_PROPERTY] Updating property ID $id with data: $data');
-
-      final response = await _dio.put(
-        '/occupant-records/$id',
-        data: data,
-        options: Options(headers: headers),
+      debugPrint(
+        '📤 [UPDATE_PROPERTY] Updating property ID $id with data: $data',
       );
+
+      final response = await _dio.put('/occupant-records/$id', data: data);
 
       debugPrint('✅ [UPDATE_PROPERTY] Response status: ${response.statusCode}');
       debugPrint('📦 [UPDATE_PROPERTY] Response data: ${response.data}');
@@ -241,15 +259,9 @@ class OccupantsService {
 
   Future<bool> deleteOccupantRecord(int id) async {
     try {
-      final token = await _tokenStorage.getToken();
-      final headers = ApiConfig.getAuthHeaders(token);
-
       debugPrint('📤 [DELETE_PROPERTY] Deleting property ID $id');
 
-      final response = await _dio.delete(
-        '/occupant-records/$id',
-        options: Options(headers: headers),
-      );
+      final response = await _dio.delete('/occupant-records/$id');
 
       debugPrint('✅ [DELETE_PROPERTY] Response status: ${response.statusCode}');
       debugPrint('📦 [DELETE_PROPERTY] Response data: ${response.data}');
@@ -261,28 +273,31 @@ class OccupantsService {
     }
   }
 
-  Future<List<OccupantDetailDto>> fetchAllOccupantRecords({String? propertyType}) async {
+  Future<List<OccupantDetailDto>> fetchAllOccupantRecords({
+    String? propertyType,
+  }) async {
     try {
-      final token = await _tokenStorage.getToken();
-      final headers = ApiConfig.getAuthHeaders(token);
-      
       final queryParams = <String, dynamic>{};
       if (propertyType != null && propertyType.isNotEmpty) {
         // Map "Off Plan" to "OffPlan" for backend
-        queryParams['property_type'] = propertyType == 'Off Plan' ? 'OffPlan' : propertyType;
+        queryParams['property_type'] = propertyType == 'Off Plan'
+            ? 'OffPlan'
+            : propertyType;
       }
-      
+
       final response = await _dio.get(
         '/occupant-records',
         queryParameters: queryParams.isEmpty ? null : queryParams,
-        options: Options(headers: headers),
       );
-      
+
       if (response.statusCode == 200) {
         final responseData = response.data['data'];
         // Backend returns { records: [...], total: ... }
-        final records = responseData['records'] as List? ?? responseData as List;
-        return records.map((e) => OccupantDetailDto.fromJson(e as Map<String, dynamic>)).toList();
+        final records =
+            responseData['records'] as List? ?? responseData as List;
+        return records
+            .map((e) => OccupantDetailDto.fromJson(e as Map<String, dynamic>))
+            .toList();
       }
       return [];
     } catch (e) {
@@ -290,6 +305,17 @@ class OccupantsService {
       return [];
     }
   }
+
+  Future<Map<String, dynamic>?> fetchDashboardStats() async {
+    try {
+      final response = await _dio.get('/occupant-records/dashboard');
+      if (response.statusCode == 200 && response.data != null) {
+        return response.data['data'] as Map<String, dynamic>;
+      }
+      return null;
+    } catch (e) {
+      debugPrint('❌ [DASHBOARD_STATS] Error: $e');
+      return null;
+    }
+  }
 }
-
-
