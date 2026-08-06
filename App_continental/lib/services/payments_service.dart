@@ -1,7 +1,5 @@
 import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart';
-import 'package:continental/config/api_config.dart';
-import 'package:continental/storage/token_storage.dart';
 
 class PaymentItemDto {
   final int id;
@@ -19,21 +17,22 @@ class PaymentItemDto {
   final String? createdAt;
   final String? updatedAt;
 
-  PaymentItemDto(
-      {required this.id,
-      this.occupantRecordId,
-      this.paymentDate,
-      required this.propertyName,
-      required this.name,
-      required this.status,
-      required this.propertyType,
-      this.emi,
-      this.rent,
-      this.paymentProof,
-      this.modeOfPayment,
-      this.developerName,
-      this.createdAt,
-      this.updatedAt});
+  PaymentItemDto({
+    required this.id,
+    this.occupantRecordId,
+    this.paymentDate,
+    required this.propertyName,
+    required this.name,
+    required this.status,
+    required this.propertyType,
+    this.emi,
+    this.rent,
+    this.paymentProof,
+    this.modeOfPayment,
+    this.developerName,
+    this.createdAt,
+    this.updatedAt,
+  });
 
   factory PaymentItemDto.fromJson(Map<String, dynamic> json) {
     return PaymentItemDto(
@@ -45,7 +44,9 @@ class PaymentItemDto {
       status: (json['status'] ?? '').toString(),
       propertyType: json['property_type'] ?? json['propertyType'] ?? 'Rental',
       emi: (json['emi'] is num) ? json['emi'] : num.tryParse('${json['emi']}'),
-      rent: (json['rent'] is num) ? json['rent'] : num.tryParse('${json['rent']}'),
+      rent: (json['rent'] is num)
+          ? json['rent']
+          : num.tryParse('${json['rent']}'),
       paymentProof: json['payment_proof'],
       modeOfPayment: json['mode_of_payment'],
       developerName: json['developer_name'],
@@ -93,7 +94,9 @@ class PaymentDetailDto {
       status: json['status'] ?? '—',
       propertyType: json['property_type'] ?? 'Rental',
       emi: (json['emi'] is num) ? json['emi'] : num.tryParse('${json['emi']}'),
-      rent: (json['rent'] is num) ? json['rent'] : num.tryParse('${json['rent']}'),
+      rent: (json['rent'] is num)
+          ? json['rent']
+          : num.tryParse('${json['rent']}'),
       imageUrl: json['image_url'],
       rentalAgreement: json['rental_agreement'],
       offplanAgreement: json['offplan_agreement'],
@@ -103,34 +106,36 @@ class PaymentDetailDto {
 }
 
 class PaymentsService {
-  final Dio _dio = Dio(BaseOptions(
-    baseUrl: ApiConfig.baseUrl,
-    connectTimeout: const Duration(seconds: 60),
-    receiveTimeout: const Duration(seconds: 60),
-    sendTimeout: const Duration(seconds: 30),
-  ));
-  final TokenStorage _tokenStorage = TokenStorage();
+  final Dio _dio;
 
-  Future<List<PaymentItemDto>> fetchPayments({String? status, String? propertyType, bool dedupe = true}) async {
-    final token = await _tokenStorage.getToken();
-    final headers = ApiConfig.getAuthHeaders(token);
+  PaymentsService(this._dio);
+
+  Future<List<PaymentItemDto>> fetchPayments({
+    String? status,
+    String? propertyType,
+    bool dedupe = true,
+  }) async {
     final query = <String, dynamic>{};
     if (status != null && status.isNotEmpty) query['status'] = status;
-    if (propertyType != null && propertyType.isNotEmpty) query['property_type'] = propertyType;
+    if (propertyType != null && propertyType.isNotEmpty)
+      query['property_type'] = propertyType;
     if (!dedupe) query['dedupe'] = 'false';
-    final response = await _dio.get('/payments', queryParameters: query.isEmpty ? null : query, options: Options(headers: headers));
+    final response = await _dio.get(
+      '/payments',
+      queryParameters: query.isEmpty ? null : query,
+    );
     if (response.statusCode == 200) {
       final data = response.data['data'];
       final list = (data['payments'] ?? data) as List;
-      return list.map((e) => PaymentItemDto.fromJson(e as Map<String, dynamic>)).toList();
+      return list
+          .map((e) => PaymentItemDto.fromJson(e as Map<String, dynamic>))
+          .toList();
     }
     return [];
   }
 
   Future<PaymentDetailDto?> fetchPaymentDetail(int id) async {
-    final token = await _tokenStorage.getToken();
-    final headers = ApiConfig.getAuthHeaders(token);
-    final response = await _dio.get('/payments/$id', options: Options(headers: headers));
+    final response = await _dio.get('/payments/$id');
     if (response.statusCode == 200) {
       final data = response.data['data'] as Map<String, dynamic>;
       return PaymentDetailDto.fromJson(data);
@@ -138,14 +143,18 @@ class PaymentsService {
     return null;
   }
 
-  Future<List<PaymentItemDto>> fetchPaymentsByOccupant(int occupantRecordId) async {
-    final token = await _tokenStorage.getToken();
-    final headers = ApiConfig.getAuthHeaders(token);
-    final response = await _dio.get('/occupant-records/$occupantRecordId/payments', options: Options(headers: headers));
+  Future<List<PaymentItemDto>> fetchPaymentsByOccupant(
+    int occupantRecordId,
+  ) async {
+    final response = await _dio.get(
+      '/occupant-records/$occupantRecordId/payments',
+    );
     if (response.statusCode == 200) {
       final data = response.data['data'];
       final list = (data['payments'] ?? data) as List;
-      return list.map((e) => PaymentItemDto.fromJson(e as Map<String, dynamic>)).toList();
+      return list
+          .map((e) => PaymentItemDto.fromJson(e as Map<String, dynamic>))
+          .toList();
     }
     return [];
   }
@@ -153,12 +162,12 @@ class PaymentsService {
   Future<bool> markPaymentAsPaid(int paymentId) async {
     debugPrint('💰 [MARK_PAID] Marking payment $paymentId as paid');
     try {
-      final token = await _tokenStorage.getToken();
-      final headers = ApiConfig.getAuthHeaders(token);
       final response = await _dio.put(
         '/payments/$paymentId',
-        data: {'status': 'paid', 'payment_date': DateTime.now().toIso8601String()},
-        options: Options(headers: headers),
+        data: {
+          'status': 'paid',
+          'payment_date': DateTime.now().toIso8601String(),
+        },
       );
       debugPrint('✅ [MARK_PAID] Response status: ${response.statusCode}');
       debugPrint('📦 [MARK_PAID] Response data: ${response.data}');
@@ -180,13 +189,11 @@ class PaymentsService {
   }) async {
     debugPrint('💰 [UPDATE_PAYMENT] Updating payment $paymentId');
     try {
-      final token = await _tokenStorage.getToken();
-      final headers = ApiConfig.getAuthHeaders(token);
       final data = <String, dynamic>{'status': status};
       if (paymentDate != null) data['payment_date'] = paymentDate;
       if (paymentProof != null) data['payment_proof'] = paymentProof;
       if (modeOfPayment != null) data['mode_of_payment'] = modeOfPayment;
-      
+
       // Add amount as emi or rent based on property type
       if (amount != null && propertyType != null) {
         final isOffPlan = propertyType.toLowerCase() == 'offplan';
@@ -196,12 +203,8 @@ class PaymentsService {
           data['rent'] = amount.toInt();
         }
       }
-      
-      final response = await _dio.put(
-        '/payments/$paymentId',
-        data: data,
-        options: Options(headers: headers),
-      );
+
+      final response = await _dio.put('/payments/$paymentId', data: data);
       debugPrint('✅ [UPDATE_PAYMENT] Response status: ${response.statusCode}');
       debugPrint('📦 [UPDATE_PAYMENT] Response data: ${response.data}');
       return response.statusCode == 200;
@@ -211,5 +214,3 @@ class PaymentsService {
     }
   }
 }
-
-

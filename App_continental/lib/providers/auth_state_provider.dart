@@ -91,9 +91,9 @@ class AuthStateNotifier extends Notifier<AuthState> {
         errorMessage: 'Error checking auth status',
       );
     } finally {
-      // Allow 3 seconds for the server to fully wake up (Render cold-start)
+      // Allow 10 seconds for the server to fully wake up (Render cold-start)
       // before the 401 interceptor starts treating 401s as real logouts.
-      Future.delayed(const Duration(seconds: 3), markAppInitialized);
+      Future.delayed(const Duration(seconds: 10), markAppInitialized);
     }
   }
 
@@ -140,9 +140,7 @@ class AuthStateNotifier extends Notifier<AuthState> {
         errorMessage: null,
       );
     } catch (e) {
-      state = state.copyWith(
-        errorMessage: 'Logout failed: ${e.toString()}',
-      );
+      state = state.copyWith(errorMessage: 'Logout failed: ${e.toString()}');
     }
   }
 
@@ -156,4 +154,3 @@ class AuthStateNotifier extends Notifier<AuthState> {
     return state.user;
   }
 }
-

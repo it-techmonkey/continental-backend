@@ -30,9 +30,9 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
     // so Render cold-start completes before user reaches login
     AuthService.warmUpServer();
 
-    // Safety net: if auth takes more than 5 seconds for any reason,
+    // Safety net: if auth takes more than 15 seconds for any reason,
     // force navigate so the app never gets permanently stuck.
-    _safetyTimer = Timer(const Duration(seconds: 5), () {
+    _safetyTimer = Timer(const Duration(seconds: 15), () {
       _navigate(ref.read(authStateProvider));
     });
 
