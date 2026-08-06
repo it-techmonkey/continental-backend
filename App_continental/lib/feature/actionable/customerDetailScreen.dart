@@ -85,11 +85,9 @@ class CustomerDetailsScreen extends ConsumerWidget {
         dio.options.connectTimeout = const Duration(seconds: 30);
         dio.options.receiveTimeout = const Duration(seconds: 30);
 
-        // Add authorization header if token exists and URL is not S3 (S3 URLs are usually public)
-        if (token != null &&
-            token.isNotEmpty &&
-            !fullUrl.contains('s3.amazonaws.com') &&
-            !fullUrl.contains('s3.')) {
+        // Only send the auth token to our own backend. Files hosted on object
+        // storage are public, and attaching the token would leak it to a third party.
+        if (token != null && token.isNotEmpty && fullUrl.startsWith(ApiConfig.baseUrl)) {
           dio.options.headers['Authorization'] = 'Bearer $token';
         }
 
