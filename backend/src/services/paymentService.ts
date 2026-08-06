@@ -139,15 +139,47 @@ export class PaymentService {
         try {
             const payments = await prisma.payments.findMany({
                 where: { occupantRecordId },
+                include: {
+                    OccupantRecord: {
+                        select: {
+                            property_type: true,
+                            name: true,
+                            property_name: true,
+                            developer_name: true,
+                            phone: true,
+                            email: true,
+                        },
+                    },
+                },
                 orderBy: { payment_date: 'asc' },
             });
+
+            // Flatten occupant record fields, matching getAllPayments' response shape
+            const transformedPayments = payments.map(payment => ({
+                id: payment.id,
+                emi: payment.emi,
+                rent: payment.rent,
+                status: payment.status,
+                payment_date: payment.payment_date,
+                payment_proof: payment.payment_proof,
+                mode_of_payment: payment.mode_of_payment,
+                occupantRecordId: payment.occupantRecordId,
+                created_at: payment.created_at,
+                updated_at: payment.updated_at,
+                property_type: payment.OccupantRecord?.property_type || null,
+                name: payment.OccupantRecord?.name || null,
+                property_name: payment.OccupantRecord?.property_name || null,
+                developer_name: payment.OccupantRecord?.developer_name || null,
+                phone: payment.OccupantRecord?.phone || null,
+                email: payment.OccupantRecord?.email || null,
+            }));
 
             return {
                 success: true,
                 message: 'Payments retrieved successfully',
                 data: {
-                    payments,
-                    total: payments.length,
+                    payments: transformedPayments,
+                    total: transformedPayments.length,
                 },
             };
         } catch (error) {
