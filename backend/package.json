@@ -14,7 +14,8 @@
         "db:migrate:deploy": "prisma migrate deploy",
         "db:studio": "prisma studio",
         "db:seed": "tsx prisma/seed.ts",
-        "db:add-sample": "tsx add-sample-data.ts"
+        "db:add-sample": "tsx add-sample-data.ts",
+        "db:backfill-schedules": "tsx backfill-payment-schedules.ts"
     },
     "keywords": [
         "nodejs",

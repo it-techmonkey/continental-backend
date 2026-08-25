@@ -3,6 +3,20 @@ import { OccupantRecordService } from '../services/occupantRecordService';
 import { CreateOccupantRecordRequest } from '../types/occupantRecord';
 import { Furnishing, RentFrequency, PropertyType, Market } from '@prisma/client';
 
+/**
+ * payment_count drives how many installments the payment schedule gets generated with, and
+ * lands in a Prisma Int column - so coerce it here rather than letting a string reach Prisma.
+ * Returns `undefined` when not supplied, or `null` when the value is unusable.
+ */
+function parsePaymentCount(value: unknown): number | undefined | null {
+    if (value === undefined || value === null || value === '') return undefined;
+
+    const parsed = parseInt(String(value), 10);
+    if (Number.isNaN(parsed) || parsed < 0) return null;
+
+    return parsed;
+}
+
 export class OccupantRecordController {
     /**
      * Handle creating a new occupant record
@@ -108,6 +122,15 @@ export class OccupantRecordController {
                 return;
             }
 
+            const parsedPaymentCount = parsePaymentCount(payment_count);
+            if (parsedPaymentCount === null) {
+                res.status(400).json({
+                    success: false,
+                    message: 'Invalid payment count value. Must be a non-negative whole number',
+                });
+                return;
+            }
+
             // Convert amenities to array if it's a string
             let amenitiesArray: string[] | undefined;
             if (amenities) {
@@ -146,7 +169,7 @@ export class OccupantRecordController {
                 payment_frequency: payment_frequency as RentFrequency | undefined,
                 rental_agreement,
                 offplan_agreement,
-                payment_count,
+                payment_count: parsedPaymentCount,
                 completion_date: completion_date ? new Date(completion_date) : undefined,
                 dld: dld ? parseInt(String(dld)) : undefined,
                 quood: quood ? parseInt(String(quood)) : undefined,
@@ -337,6 +360,15 @@ export class OccupantRecordController {
                 return;
             }
 
+            const parsedPaymentCount = parsePaymentCount(payment_count);
+            if (parsedPaymentCount === null) {
+                res.status(400).json({
+                    success: false,
+                    message: 'Invalid payment count value. Must be a non-negative whole number',
+                });
+                return;
+            }
+
             // Convert amenities to array if it's a string
             let amenitiesArray: string[] | undefined;
             if (amenities) {
@@ -374,7 +406,7 @@ export class OccupantRecordController {
                 payment_frequency: payment_frequency as RentFrequency | undefined,
                 rental_agreement,
                 offplan_agreement,
-                payment_count,
+                payment_count: parsedPaymentCount,
                 completion_date: completion_date ? new Date(completion_date) : undefined,
                 dld,
                 quood,

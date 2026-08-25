@@ -1,152 +1,87 @@
+import { Prisma } from '@prisma/client';
 import { prisma } from '../lib/prisma';
 import { CreateOccupantRecordRequest } from '../types/occupantRecord';
+import {
+    buildScheduleRows,
+    dueDateForIndex,
+    rentAmountFor,
+    resolveScheduleConfig,
+} from './paymentScheduleService';
 
 export class OccupantRecordService {
     /**
-     * Create a new occupant record
+     * Create a new occupant record, together with its payment schedule.
      */
     static async createOccupantRecord(data: CreateOccupantRecordRequest) {
         try {
-            // Derive sensible defaults if frontend omits schedule config
-            const isOffPlanInput = (data.property_type || 'Rental') === 'OffPlan';
-            const amountInput = isOffPlanInput ? data.emi : data.rent;
-            const defaultFrequency = amountInput ? 'monthly' : undefined; // default monthly when amount exists
-
-            // Derive count if not provided:
-            // - OffPlan: if completion_date provided, compute months between now and completion, then divide by interval
-            // - Rental: default to 12 months
-            let derivedCount: number | undefined;
-            if (amountInput) {
-                if (isOffPlanInput && data.completion_date) {
-                    const now = new Date();
-                    const completion = new Date(data.completion_date);
-                    const months = (completion.getFullYear() - now.getFullYear()) * 12 + (completion.getMonth() - now.getMonth());
-                    const freq = (data.payment_frequency || defaultFrequency) as 'monthly' | 'quarterly' | 'yearly' | undefined;
-                    const interval = freq === 'monthly' ? 1 : freq === 'quarterly' ? 3 : 12;
-                    derivedCount = Math.max(1, Math.ceil((months > 0 ? months : 1) / interval));
-                } else {
-                    derivedCount = 12;
-                }
-            }
-
-            const occupantRecord = await prisma.occupantRecord.create({
-                data: {
-                    name: data.name,
-                    phone: data.phone,
-                    email: data.email,
-                    property_name: data.property_name,
-                    developer_name: data.developer_name,
-                    image_url: data.image_url,
-                    bedrooms: data.bedrooms,
-                    bathrooms: data.bathrooms,
-                    furnishing: data.furnishing,
-                    price: data.price,
-                    city: data.city,
-                    location: data.location,
-                    locality: data.locality,
-                    latitude: data.latitude,
-                    longitude: data.longitude,
-                    property_views: data.property_views,
-                    amenities: data.amenities,
-                    property_type: data.property_type || 'Rental',
-                    home_type: data.home_type,
-                    market: data.market,
-                    handover: data.handover,
-                    rent: data.rent,
-                    emi: data.emi,
-                    payment_frequency: (data.payment_frequency || defaultFrequency) as any,
-                    rental_agreement: data.rental_agreement,
-                    offplan_agreement: data.offplan_agreement,
-                    payment_count: (data.payment_count ?? derivedCount),
-                    completion_date: data.completion_date,
-                    dld: data.dld,
-                    quood: data.quood,
-                    other_charges: data.other_charges,
-                    penalties: data.penalties,
-                },
-                include: {
-                    payments: {
-                        select: {
-                            status: true,
-                            payment_date: true,
-                            occupantRecordId: true,
-                        },
-                    },
-                },
+            // Resolve the schedule config up front so the columns we persist always match
+            // the installment rows we generate below.
+            const { frequency, count } = resolveScheduleConfig({
+                property_type: data.property_type,
+                payment_frequency: data.payment_frequency,
+                payment_count: data.payment_count,
+                completion_date: data.completion_date,
+                handover: data.handover,
             });
 
-            // Auto-generate payment schedule based on property type
-            try {
-                const isOffPlan = (occupantRecord.property_type === 'OffPlan');
-                const frequency = occupantRecord.payment_frequency;
-                const paymentCount = occupantRecord.payment_count ?? 0;
+            // The record and its schedule are written together: a property must never land
+            // without its timeline.
+            const occupantRecord = await prisma.$transaction(async (tx) => {
+                const record = await tx.occupantRecord.create({
+                    data: {
+                        name: data.name,
+                        phone: data.phone,
+                        email: data.email,
+                        property_name: data.property_name,
+                        developer_name: data.developer_name,
+                        image_url: data.image_url,
+                        bedrooms: data.bedrooms,
+                        bathrooms: data.bathrooms,
+                        furnishing: data.furnishing,
+                        price: data.price,
+                        city: data.city,
+                        location: data.location,
+                        locality: data.locality,
+                        latitude: data.latitude,
+                        longitude: data.longitude,
+                        property_views: data.property_views,
+                        amenities: data.amenities,
+                        property_type: data.property_type || 'Rental',
+                        home_type: data.home_type,
+                        market: data.market,
+                        handover: data.handover,
+                        rent: data.rent,
+                        emi: data.emi,
+                        payment_frequency: frequency,
+                        rental_agreement: data.rental_agreement,
+                        offplan_agreement: data.offplan_agreement,
+                        payment_count: count,
+                        completion_date: data.completion_date,
+                        dld: data.dld,
+                        quood: data.quood,
+                        other_charges: data.other_charges,
+                        penalties: data.penalties,
+                    },
+                });
 
-                if (paymentCount > 0 && frequency) {
-                    const intervalMonths = frequency === 'monthly' ? 1 : frequency === 'quarterly' ? 3 : 12;
-
-                    const baseDate = occupantRecord.created_at ?? new Date();
-                    const paymentsData: {
-                        emi?: number;
-                        rent?: number;
-                        status: 'due' | 'paid' | 'overdue';
-                        payment_date: Date | null;
-                        occupantRecordId: number;
-                    }[] = [];
-
-                    // For OffPlan: create empty payments (no emi value) - user will fill in amounts later
-                    // For Rental: create payments with rent amount
-                    let amount: number | null = null;
-                    if (!isOffPlan && occupantRecord.rent && occupantRecord.rent > 0) {
-                        amount = occupantRecord.rent;
-                    }
-
-                    for (let i = 0; i < paymentCount; i++) {
-                        const dueDate = new Date(baseDate);
-                        // Calculate months to add
-                        const monthsToAdd = i * intervalMonths;
-                        
-                        // Get the day of month from the base date
-                        const baseDay = dueDate.getDate();
-                        
-                        // Add months to the date
-                        dueDate.setMonth(dueDate.getMonth() + monthsToAdd);
-                        
-                        // If the day has changed (e.g., Jan 31 -> Feb becomes Mar 3),
-                        // set it back to the last valid day of the month
-                        if (dueDate.getDate() !== baseDay) {
-                            // Get the last day of the new month
-                            const lastDayOfMonth = new Date(dueDate.getFullYear(), dueDate.getMonth() + 1, 0).getDate();
-                            dueDate.setDate(lastDayOfMonth);
-                        }
-
-                        // For OffPlan: create empty payment (no emi, no date)
-                        // For Rental: include rent amount and date
-                        if (isOffPlan) {
-                            paymentsData.push({
-                                // No emi value - will be filled by user later
-                                // No payment_date - will be set when user fills in payment
-                                status: 'due',
-                                payment_date: null, // No date for empty off-plan payments
-                                occupantRecordId: occupantRecord.id,
-                            });
-                        } else if (amount && amount > 0) {
-                            paymentsData.push({
-                                rent: amount,
-                                status: 'due',
-                                payment_date: dueDate,
-                                occupantRecordId: occupantRecord.id,
-                            });
-                        }
-                    }
-
-                    if (paymentsData.length > 0) {
-                        await prisma.payments.createMany({ data: paymentsData });
-                    }
+                const scheduleRows = buildScheduleRows(record);
+                if (scheduleRows.length > 0) {
+                    await tx.payments.createMany({ data: scheduleRows });
                 }
-            } catch (scheduleError) {
-                // Log and continue; creation of occupant record should not fail due to schedule generation
-                console.error('Auto-generate payments schedule error:', scheduleError);
-            }
+
+                // Read the schedule back so the response carries the real timeline.
+                const payments = await tx.payments.findMany({
+                    where: { occupantRecordId: record.id },
+                    select: {
+                        status: true,
+                        payment_date: true,
+                        occupantRecordId: true,
+                    },
+                    orderBy: { id: 'asc' },
+                });
+
+                return { ...record, payments };
+            });
 
             return {
                 success: true,
@@ -375,6 +310,89 @@ export class OccupantRecordService {
     }
 
     /**
+     * Bring a property's payment schedule back in line with its payment_count /
+     * payment_frequency / rent, without ever disturbing installments already marked paid.
+     *
+     * - too few rows  -> append the missing tail
+     * - too many rows -> drop surplus *unpaid* rows from the end
+     * - rent/frequency changed -> refresh amount/due date on the remaining unpaid rows
+     */
+    private static async reconcileSchedule(
+        tx: Prisma.TransactionClient,
+        recordId: number,
+        options: { rentChanged?: boolean; frequencyChanged?: boolean; typeChanged?: boolean } = {},
+    ) {
+        const record = await tx.occupantRecord.findUnique({ where: { id: recordId } });
+        if (!record) return;
+
+        const { frequency, count } = resolveScheduleConfig(record);
+
+        // Persist a resolved config when the record is missing one, so the stored columns
+        // always describe the schedule that actually exists.
+        if (record.payment_frequency !== frequency || record.payment_count !== count) {
+            await tx.occupantRecord.update({
+                where: { id: recordId },
+                data: { payment_frequency: frequency, payment_count: count },
+            });
+        }
+
+        const existing = await tx.payments.findMany({
+            where: { occupantRecordId: recordId },
+            orderBy: { id: 'asc' },
+        });
+
+        const paidCount = existing.filter((p) => p.status === 'paid').length;
+        // Never shrink below what has already been paid.
+        const target = Math.max(count, paidCount);
+
+        if (existing.length < target) {
+            const rows = buildScheduleRows(
+                { ...record, payment_frequency: frequency, payment_count: target },
+                { fromIndex: existing.length, toCount: target },
+            );
+            if (rows.length > 0) {
+                await tx.payments.createMany({ data: rows });
+            }
+        } else if (existing.length > target) {
+            const surplus = existing.length - target;
+            const removable = existing
+                .filter((p) => p.status !== 'paid')
+                .slice(-surplus)
+                .map((p) => p.id);
+            if (removable.length > 0) {
+                await tx.payments.deleteMany({ where: { id: { in: removable } } });
+            }
+        }
+
+        // Off-Plan rows are blank placeholders the admin fills in by hand - nothing to refresh.
+        if (record.property_type === 'OffPlan') return;
+
+        // A property switched over from Off-Plan carries dateless placeholder rows, so it
+        // needs the full rental treatment even if rent/frequency themselves did not change.
+        const refreshRent = options.rentChanged || options.typeChanged;
+        const refreshDates = options.frequencyChanged || options.typeChanged;
+        if (!refreshRent && !refreshDates) return;
+
+        const rows = await tx.payments.findMany({
+            where: { occupantRecordId: recordId },
+            orderBy: { id: 'asc' },
+        });
+        const rent = rentAmountFor(record);
+
+        for (let i = 0; i < rows.length; i++) {
+            if (rows[i].status === 'paid') continue;
+
+            const refreshed: Prisma.PaymentsUpdateInput = {};
+            if (refreshRent) refreshed.rent = rent;
+            if (refreshDates) {
+                refreshed.payment_date = dueDateForIndex(record.created_at, i, frequency);
+            }
+
+            await tx.payments.update({ where: { id: rows[i].id }, data: refreshed });
+        }
+    }
+
+    /**
      * Update an occupant record
      */
     static async updateOccupantRecord(recordId: number, data: Partial<CreateOccupantRecordRequest>) {
@@ -427,18 +445,48 @@ export class OccupantRecordService {
             if (data.other_charges !== undefined) updateData.other_charges = data.other_charges;
             if (data.penalties !== undefined) updateData.penalties = data.penalties;
 
-            const updatedRecord = await prisma.occupantRecord.update({
-                where: { id: recordId },
-                include: {
-                    payments: {
-                        select: {
-                            status: true,
-                            payment_date: true,
-                            occupantRecordId: true,
-                        },
+            // Changing any of these reshapes the payment schedule, so the existing
+            // installments have to be reconciled against the new config.
+            const scheduleFieldsTouched =
+                data.payment_count !== undefined ||
+                data.payment_frequency !== undefined ||
+                data.rent !== undefined ||
+                data.property_type !== undefined ||
+                data.completion_date !== undefined;
+
+            const updatedRecord = await prisma.$transaction(async (tx) => {
+                await tx.occupantRecord.update({
+                    where: { id: recordId },
+                    data: updateData,
+                });
+
+                if (scheduleFieldsTouched) {
+                    await OccupantRecordService.reconcileSchedule(tx, recordId, {
+                        rentChanged: data.rent !== undefined && data.rent !== existingRecord.rent,
+                        frequencyChanged:
+                            data.payment_frequency !== undefined &&
+                            data.payment_frequency !== existingRecord.payment_frequency,
+                        typeChanged:
+                            data.property_type !== undefined &&
+                            data.property_type !== existingRecord.property_type,
+                    });
+                }
+
+                // Re-read: reconcileSchedule may have normalised payment_count/frequency.
+                const record = await tx.occupantRecord.findUniqueOrThrow({
+                    where: { id: recordId },
+                });
+                const payments = await tx.payments.findMany({
+                    where: { occupantRecordId: recordId },
+                    select: {
+                        status: true,
+                        payment_date: true,
+                        occupantRecordId: true,
                     },
-                },
-                data: updateData,
+                    orderBy: { id: 'asc' },
+                });
+
+                return { ...record, payments };
             });
 
             return {

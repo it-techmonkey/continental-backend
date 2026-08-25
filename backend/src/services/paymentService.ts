@@ -79,9 +79,11 @@ export class PaymentService {
                         },
                     },
                 },
-                orderBy: {
-                    payment_date: 'asc',
-                },
+                orderBy: [
+                    { payment_date: 'asc' },
+                    // Tiebreak so undated rows come back in a stable order.
+                    { id: 'asc' },
+                ],
             });
 
             // Transform the response to flatten occupant record fields
@@ -151,7 +153,11 @@ export class PaymentService {
                         },
                     },
                 },
-                orderBy: { payment_date: 'asc' },
+                // Rows are inserted in schedule order and only ever appended, so id order is
+                // timeline order. Ordering by payment_date would shuffle the timeline: Off-Plan
+                // placeholders all have a null date, and the client numbers the rows by their
+                // position in this list.
+                orderBy: { id: 'asc' },
             });
 
             // Flatten occupant record fields, matching getAllPayments' response shape
